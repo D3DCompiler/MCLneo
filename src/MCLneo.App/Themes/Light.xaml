@@ -39,6 +39,7 @@
     <SolidColorBrush x:Key="GlassBorderBrush" Color="#F2FFFFFF"/>
     <SolidColorBrush x:Key="GlassHighlightBrush" Color="#F2FFFFFF"/>
     <SolidColorBrush x:Key="GlassBrush" Color="#D9DDE1EA"/>
+    <SolidColorBrush x:Key="PopupGlassBrush" Color="#E2E5EC"/>
     <LinearGradientBrush x:Key="GlassSheenBrush" StartPoint="0,0" EndPoint="1,1">
         <GradientStop Color="#B3FFFFFF" Offset="0"/>
         <GradientStop Color="#00FFFFFF" Offset="0.52"/>

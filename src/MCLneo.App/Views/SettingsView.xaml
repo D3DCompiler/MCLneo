@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="740">
+             mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="740" TextElement.Foreground="{DynamicResource TextBrush}">
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
         <StackPanel Margin="0,0,12,28">
             <Grid Margin="2,0,0,20">
@@ -146,7 +146,7 @@
             <Border Style="{StaticResource Card}" Padding="22" Margin="0,14,0,0">
                 <StackPanel>
                     <TextBlock Text="界面与体验" Style="{StaticResource H3}"/>
-                    <TextBlock Text="浅色与深色模式使用同一套版式，主题色会随模式自动调整；保存后立即应用。"
+                    <TextBlock Text="浅色与深色模式使用同一套版式，主题色会随模式自动调整；选择后立即应用并保存。"
                                Style="{StaticResource Muted}" Margin="0,5,0,14"/>
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -158,18 +158,25 @@
                         </Grid.ColumnDefinitions>
                         <StackPanel>
                             <TextBlock Text="外观模式" Style="{StaticResource SectionLabel}" Margin="1,0,0,7"/>
-                            <ComboBox x:Name="ThemeModeBox" Height="40"/>
+                            <ComboBox x:Name="ThemeModeBox" Height="40"
+                                      SelectionChanged="Appearance_Changed"/>
                         </StackPanel>
                         <StackPanel Grid.Column="2">
                             <TextBlock Text="主题色" Style="{StaticResource SectionLabel}" Margin="1,0,0,7"/>
-                            <ComboBox x:Name="ThemeBox" Height="40"/>
+                            <ComboBox x:Name="ThemeBox" Height="40"
+                                      SelectionChanged="Appearance_Changed"/>
                         </StackPanel>
                         <StackPanel Grid.Column="4">
                             <TextBlock Text="帮助与更新" Style="{StaticResource SectionLabel}" Margin="1,0,0,7"/>
-                            <Button Content="打开帮助与快捷键" Style="{StaticResource SecondaryButton}" Height="40"
-                                    Click="Help_Click"/>
-                            <Button Content="检查软件更新" Style="{StaticResource GhostButton}" Height="34"
-                                    Margin="0,7,0,0" FontSize="11" Click="Update_Click"/>
+                            <Button x:Name="UpdateButton" Content="检查更新"
+                                    Style="{StaticResource SecondaryButton}" Height="40"
+                                    Click="Update_Click"/>
+                            <ProgressBar x:Name="UpdateProgress" Minimum="0" Maximum="1"
+                                         Height="4" Margin="0,7,0,0" Visibility="Collapsed"/>
+                            <TextBlock x:Name="UpdateStatus" Text="" Style="{StaticResource Caption}"
+                                       TextWrapping="Wrap" Margin="0,5,0,0" Visibility="Collapsed"/>
+                            <Button Content="打开帮助与快捷键" Style="{StaticResource GhostButton}" Height="34"
+                                    Margin="0,7,0,0" FontSize="11" Click="Help_Click"/>
                         </StackPanel>
                     </Grid>
                 </StackPanel>
@@ -208,31 +215,6 @@
                         </StackPanel>
                     </Grid>
                 </StackPanel>
-            </Border>
-
-            <Border Style="{StaticResource Card}" Padding="22" Margin="0,14,0,0">
-                <Grid>
-                    <StackPanel>
-                        <TextBlock Text="关于 MCLneo" Style="{StaticResource H3}"/>
-                        <TextBlock Text="一个独立的 Minecraft 启动器，目标是对齐 PCL2 的核心工作流，同时保持代码与数据可迁移。"
-                                   Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,5,0,0" MaxWidth="560"/>
-                        <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
-                            <Border Style="{StaticResource TagBorder}">
-                                <TextBlock Text="0.1.2 · PREVIEW" FontSize="9.5" Foreground="{DynamicResource MutedBrush}"/>
-                            </Border>
-                            <Border Style="{StaticResource TagBorder}" Margin="6,0,0,0">
-                                <TextBlock Text=".NET 10 · WPF" FontSize="9.5" Foreground="{DynamicResource MutedBrush}"/>
-                            </Border>
-                            <Border Style="{StaticResource TagBorder}" Margin="6,0,0,0">
-                                <TextBlock Text="Windows x64" FontSize="9.5" Foreground="{DynamicResource MutedBrush}"/>
-                            </Border>
-                        </StackPanel>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                        <Button Content="打开数据目录" Style="{StaticResource SecondaryButton}" Padding="14,8"
-                                Click="OpenDataFolder_Click"/>
-                    </StackPanel>
-                </Grid>
             </Border>
 
             <TextBlock Text="MCLneo 不隶属于 Mojang Studios 或 Microsoft。Minecraft 是 Mojang Studios 的商标。"

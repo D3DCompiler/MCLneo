@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Java 运行时管理" Width="760" Height="620" WindowStyle="None" ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner" Background="{DynamicResource BgBrush}" ShowInTaskbar="False"
-        Loaded="Window_Loaded">
+        Loaded="Window_Loaded" TextElement.Foreground="{DynamicResource TextBrush}">
     <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderStrongBrush}" BorderThickness="1" CornerRadius="16">
         <Grid>
             <Grid.RowDefinitions>

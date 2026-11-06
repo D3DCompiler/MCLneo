@@ -37,7 +37,8 @@ public sealed class AppServices : IDisposable
         UpdateService updates,
         WorldService worlds,
         EasyTierManager easyTier,
-        RoomService rooms)
+        RoomService rooms,
+        Ipv6DirectService directRooms)
     {
         Paths = paths;
         Log = log;
@@ -60,6 +61,7 @@ public sealed class AppServices : IDisposable
         Worlds = worlds;
         EasyTier = easyTier;
         Rooms = rooms;
+        DirectRooms = directRooms;
     }
 
     public AppPaths Paths { get; }
@@ -83,6 +85,7 @@ public sealed class AppServices : IDisposable
     public WorldService Worlds { get; }
     public EasyTierManager EasyTier { get; }
     public RoomService Rooms { get; }
+    public Ipv6DirectService DirectRooms { get; }
 
     public static async Task<AppServices> CreateAsync(CancellationToken ct = default)
     {
@@ -110,10 +113,11 @@ public sealed class AppServices : IDisposable
         var worlds = new WorldService(paths, log);
         var easyTier = new EasyTierManager(paths, settings, downloads, http, log);
         var rooms = new RoomService(paths, settings, easyTier, log);
+        var directRooms = new Ipv6DirectService();
         log.Info($"MCLneo 启动，数据目录：{paths.AppRoot}，游戏目录：{settings.Current.GameRoot}");
         return new AppServices(paths, log, http, settings, downloads, catalog, installer, loaderInstaller,
             instances, java, authlib, authlibStore, skins, launch, modrinth, modpacks, gameLogs, updates,
-            worlds, easyTier, rooms);
+            worlds, easyTier, rooms, directRooms);
     }
 
     public void Dispose()

@@ -9,7 +9,7 @@
         WindowStyle="None" ResizeMode="CanResize" WindowStartupLocation="CenterScreen"
         AllowsTransparency="True" Background="Transparent" UseLayoutRounding="True" SnapsToDevicePixels="True"
         Closing="Window_Closing" SourceInitialized="Window_SourceInitialized"
-        StateChanged="Window_StateChanged">
+        StateChanged="Window_StateChanged" TextElement.Foreground="{DynamicResource TextBrush}">
     <shell:WindowChrome.WindowChrome>
         <shell:WindowChrome CaptionHeight="0" ResizeBorderThickness="6" GlassFrameThickness="0"
                             CornerRadius="0" NonClientFrameEdges="None" UseAeroCaptionButtons="False"/>
@@ -350,9 +350,6 @@
                             <Button Content="浅色 / 深色" Style="{StaticResource GhostButton}" Height="36"
                                     HorizontalContentAlignment="Left" Padding="10,0" FontSize="12"
                                     Click="AccountTheme_Click"/>
-                            <Button Content="检查更新" Style="{StaticResource GhostButton}" Height="36"
-                                    HorizontalContentAlignment="Left" Padding="10,0" FontSize="12"
-                                    Click="AccountUpdate_Click"/>
                             <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="6,4"/>
                             <Button Content="打开数据目录" Style="{StaticResource GhostButton}" Height="34"
                                     HorizontalContentAlignment="Left" Padding="10,0" FontSize="11.5"

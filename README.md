@@ -1,8 +1,8 @@
 # MCLneo
 
-MCLneo 是一个面向 Windows 的 Minecraft 启动器，用来管理游戏版本、游戏、模组、整合包、存档和联机房间。
+MCLneo 是一个面向 Windows 的 Minecraft 启动器，用来管理游戏、版本、模组、整合包、存档和联机房间。
 
-当前版本：**0.1.2**
+当前版本：**0.1.3**
 
 ![MCLneo 主页](docs/screenshots/home-light.png)
 
@@ -18,7 +18,7 @@ MCLneo 是一个面向 Windows 的 Minecraft 启动器，用来管理游戏版�
 | 资源 | 安装资源包和光影到当前游戏 |
 | 存档 | 查看存档、备份为 zip、导入存档、打开数据包目录 |
 | 服务器 | 管理服务器列表，保存后可以直接启动并连接 |
-| 联机房间 | 使用 EasyTier 创建或加入房间，通过邀请码让朋友加入局域网游戏 |
+| 联机房间 | 使用 EasyTier 创建或加入房间；双方有公网 IPv6 时也可以直接连接 |
 | Java | 自动扫描 Java，下载和管理 Adoptium 运行时，修复游戏 |
 | 日志与修复 | 查看游戏日志，分析常见崩溃特征，检查并修复游戏文件 |
 | 账户 | 离线账户，以及 authlib-injector / Yggdrasil 第三方账户 |
@@ -27,7 +27,7 @@ MCLneo 是一个面向 Windows 的 Minecraft 启动器，用来管理游戏版�
 
 ## 安装
 
-从发布页下载 `MCLneo-0.1.2-Setup.exe`，运行安装即可。默认安装到 `D:\MCLneo\Launcher`。
+从发布页下载 `MCLneo-0.1.3-Setup.exe`，运行安装即可。默认安装到 `D:\MCLneo\Launcher`。
 
 ## 快速开始
 
@@ -50,6 +50,17 @@ MCLneo 是一个面向 Windows 的 Minecraft 启动器，用来管理游戏版�
 4. 朋友加入后，在 Minecraft 的“多人游戏 → 直接连接”中连接房间页显示的 `127.0.0.1:<端口>`。
 
 EasyTier 需要创建 TUN 虚拟网卡，因此创建或加入房间时需要以管理员身份运行 MCLneo。未提权时，联机页面会提供“以管理员身份重启”。
+
+## IPv6 直连
+
+双方都有公网 IPv6 时，可以不使用 EasyTier：
+
+1. 房主在单人游戏中“对局域网开放”，把端口填到“我是房主”，创建 IPv6 直连。
+2. 房主把生成的 `[IPv6]:端口` 地址发给朋友。
+3. 朋友在“我是成员”中填入地址并加入。
+4. 朋友在 Minecraft 中连接启动器显示的 `127.0.0.1:端口`。
+
+房主需要允许 Windows 防火墙和路由器防火墙放行对应 TCP 端口。网络没有公网 IPv6 时请使用 EasyTier。
 
 ## 数据目录
 

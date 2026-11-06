@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="日志与崩溃报告" Width="1040" Height="720" WindowStyle="None" ResizeMode="CanResize"
         WindowStartupLocation="CenterOwner" Background="{DynamicResource BgBrush}" ShowInTaskbar="False"
-        Loaded="Window_Loaded">
+        Loaded="Window_Loaded" TextElement.Foreground="{DynamicResource TextBrush}">
     <Border Background="{DynamicResource BgBrush}" BorderBrush="{DynamicResource BorderStrongBrush}" BorderThickness="1" CornerRadius="16">
         <Grid>
             <Grid.RowDefinitions>

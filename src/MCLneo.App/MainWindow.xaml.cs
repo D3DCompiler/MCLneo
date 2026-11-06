@@ -11,6 +11,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using MCLneo.App.Services;
+using MCLneo.Core.Updates;
 using MCLneo.App.Views;
 
 namespace MCLneo.App;
@@ -167,6 +168,8 @@ public partial class MainWindow : Window
                 PageHost.RenderTransform = Transform.Identity;
             }
 
+            page.Loaded += (_, _) => LiquidGlass.AttachTree(page);
+            Dispatcher.BeginInvoke(new Action(() => LiquidGlass.AttachTree(page)));
             ApplyPageHeader(key);
             SetNavSelection(key);
         }
@@ -711,13 +714,6 @@ public partial class MainWindow : Window
     {
         AccountPopup.IsOpen = false;
         ThemeToggle_Click(sender, e);
-    }
-
-    private void AccountUpdate_Click(object sender, RoutedEventArgs e)
-    {
-        AccountPopup.IsOpen = false;
-        var window = new UpdateWindow(_services) { Owner = this };
-        window.ShowDialog();
     }
 
     private void AccountData_Click(object sender, RoutedEventArgs e)

@@ -80,7 +80,9 @@ public sealed class LauncherSettings
     public string? EasyTierPeer { get; set; }
     public string? EasyTierCorePath { get; set; }
     public string? LastRoomInvite { get; set; }
-    public string UpdateManifestUrl { get; set; } = "";
+    public const string DefaultUpdateManifestUrl =
+        "https://api.github.com/repos/D3DCompiler/MCLneo/releases/latest";
+    public string UpdateManifestUrl { get; set; } = DefaultUpdateManifestUrl;
     public bool CloseAfterLaunch { get; set; }
     public double WindowWidth { get; set; } = 1280;
     public double WindowHeight { get; set; } = 820;

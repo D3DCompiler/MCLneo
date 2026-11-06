@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="MCLneo" Width="460" SizeToContent="Height" WindowStyle="None" ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner" Background="{DynamicResource BgBrush}" ShowInTaskbar="False"
-        KeyDown="Window_KeyDown" MouseLeftButtonDown="Window_MouseLeftButtonDown" Loaded="Window_Loaded">
+        KeyDown="Window_KeyDown" MouseLeftButtonDown="Window_MouseLeftButtonDown" Loaded="Window_Loaded" TextElement.Foreground="{DynamicResource TextBrush}">
     <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderStrongBrush}" BorderThickness="1" CornerRadius="16"
             Padding="24">
         <Grid>

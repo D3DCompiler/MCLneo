@@ -14,6 +14,7 @@ public sealed class UpdateInfo
     public string Url { get; set; } = "";
     public string? Sha256 { get; set; }
     public string? Notes { get; set; }
+    public bool IsInstaller { get; set; }
 }
 
 public sealed record StagedUpdate(string Version, string StagingDirectory, string ArchivePath);
@@ -24,7 +25,13 @@ public sealed record StagedUpdate(string Version, string StagingDirectory, strin
 /// </summary>
 public sealed class UpdateService
 {
-    public const string CurrentVersion = "0.1.0";
+    public const string GitHubReleaseUrl =
+        "https://api.github.com/repos/D3DCompiler/MCLneo/releases/latest";
+
+    public static string CurrentVersion { get; } =
+        typeof(UpdateService).Assembly.GetName().Version is { } version
+            ? $"{version.Major}.{version.Minor}.{version.Build}"
+            : "0.0.0";
     private readonly AppPaths _paths;
     private readonly HttpService _http;
     private readonly AppLog _log;
@@ -57,7 +64,8 @@ public sealed class UpdateService
             json = await _http.GetStringAsync(manifestUrl, ct).ConfigureAwait(false);
         }
 
-        var info = JsonSerializer.Deserialize<UpdateInfo>(json, JsonDefaults.Options);
+        var info = TryParseGithubRelease(json);
+        info ??= JsonSerializer.Deserialize<UpdateInfo>(json, JsonDefaults.Options);
         if (info is null || string.IsNullOrWhiteSpace(info.Version) || string.IsNullOrWhiteSpace(info.Url))
         {
             throw new InvalidDataException("更新清单缺少 version/url");
@@ -70,6 +78,94 @@ public sealed class UpdateService
         }
 
         return info;
+    }
+
+    private static UpdateInfo? TryParseGithubRelease(string json)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(json);
+            var root = document.RootElement;
+            if (!root.TryGetProperty("tag_name", out var tagElement) ||
+                !root.TryGetProperty("assets", out var assets) ||
+                assets.ValueKind != JsonValueKind.Array)
+            {
+                return null;
+            }
+
+            var version = (tagElement.GetString() ?? "").Trim().TrimStart('v', 'V');
+            if (!Version.TryParse(version, out _)) return null;
+
+            string? url = null;
+            var installer = false;
+            foreach (var asset in assets.EnumerateArray())
+            {
+                var name = asset.TryGetProperty("name", out var nameElement)
+                    ? nameElement.GetString() ?? ""
+                    : "";
+                var candidate = asset.TryGetProperty("browser_download_url", out var urlElement)
+                    ? urlElement.GetString()
+                    : null;
+                if (string.IsNullOrWhiteSpace(candidate)) continue;
+                if (name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+                {
+                    url = candidate;
+                    installer = true;
+                    break;
+                }
+
+                if (name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) && url is null)
+                {
+                    url = candidate;
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(url)) return null;
+            var notes = root.TryGetProperty("body", out var body) ? body.GetString() : null;
+            return new UpdateInfo
+            {
+                Version = version,
+                Url = url,
+                Notes = notes,
+                IsInstaller = installer
+            };
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    public async Task<string> DownloadInstallerAsync(
+        UpdateInfo info,
+        IProgress<InstallProgress>? progress = null,
+        CancellationToken ct = default)
+    {
+        var updateRoot = Path.Combine(_paths.AppRoot, "updates");
+        Directory.CreateDirectory(updateRoot);
+        var destination = Path.Combine(updateRoot, $"MCLneo-{info.Version}-Setup.exe");
+        progress?.Report(new InstallProgress("下载更新", 0.02, info.Url));
+        using var response = await _http.Client.GetAsync(info.Url, HttpCompletionOption.ResponseHeadersRead, ct)
+            .ConfigureAwait(false);
+        response.EnsureSuccessStatusCode();
+        var total = response.Content.Headers.ContentLength ?? -1;
+        await using var input = await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+        await using var output = new FileStream(destination, FileMode.Create, FileAccess.Write, FileShare.None,
+            128 * 1024, FileOptions.Asynchronous);
+        var buffer = new byte[128 * 1024];
+        long received = 0;
+        int read;
+        while ((read = await input.ReadAsync(buffer, ct).ConfigureAwait(false)) > 0)
+        {
+            await output.WriteAsync(buffer.AsMemory(0, read), ct).ConfigureAwait(false);
+            received += read;
+            progress?.Report(new InstallProgress("下载更新",
+                total > 0 ? received / (double)total * 0.9 : 0.4,
+                $"{received / 1024 / 1024} MB"));
+        }
+
+        progress?.Report(new InstallProgress("下载完成", 1, destination));
+        return destination;
     }
 
     public async Task<StagedUpdate> DownloadAndStageAsync(

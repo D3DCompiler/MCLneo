@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="740">
+             mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="740" TextElement.Foreground="{DynamicResource TextBrush}">
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
         <StackPanel Margin="0,2,12,30">
             <Grid Margin="2,0,0,22">
@@ -14,7 +14,7 @@
                 </StackPanel>
                 <StackPanel HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,4,0,0">
                     <TextBlock Text="{Binding TodayText}" Style="{StaticResource Muted}" HorizontalAlignment="Right"/>
-                    <TextBlock Text="MCLneo 0.1.2" Style="{StaticResource Caption}" HorizontalAlignment="Right"
+                    <TextBlock Text="MCLneo 0.1.3" Style="{StaticResource Caption}" HorizontalAlignment="Right"
                                Margin="0,5,0,0"/>
                 </StackPanel>
             </Grid>

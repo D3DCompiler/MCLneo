@@ -1,5 +1,5 @@
 #define MyAppName "MCLneo"
-#define MyAppVersion "0.1.2"
+#define MyAppVersion "0.1.3"
 #define MyAppExe "MCLneo.exe"
 #define MyAppId "{{2F6B0B6E-6C1A-4D3A-9A7E-0C7B9E5B2A11}"
 
@@ -9,7 +9,7 @@ AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppVerName={#MyAppName} {#MyAppVersion}
 AppPublisher={#MyAppName}
-VersionInfoVersion=0.1.2.0
+VersionInfoVersion=0.1.3.0
 DefaultDirName=D:\MCLneo\Launcher
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
@@ -41,4 +41,4 @@ Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExe}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExe}"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\{#MyAppExe}"; Description: "启动 {#MyAppName}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#MyAppExe}"; Description: "启动 {#MyAppName}"; Flags: nowait postinstall

@@ -7,7 +7,9 @@ using Microsoft.Win32;
 using MCLneo.App.Services;
 using MCLneo.Core;
 using MCLneo.Core.Accounts;
+using MCLneo.Core.Models;
 using MCLneo.Core.Rooms;
+using MCLneo.Core.Updates;
 
 namespace MCLneo.App.Views;
 
@@ -17,14 +19,36 @@ public partial class SettingsView : UserControl
     private readonly AppState _state;
     private List<JavaChoice> _javaChoices = new();
     private bool _initialized;
+    private bool _updating;
 
     public SettingsView(AppServices services, AppState state)
     {
         InitializeComponent();
         _services = services;
         _state = state;
-        _initialized = true;
+        _initialized = false;
         LoadSettings();
+        _initialized = true;
+    }
+
+    private async void Appearance_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (!_initialized || ThemeModeBox is null || ThemeBox is null) return;
+        var mode = sender == ThemeModeBox
+            ? (ThemeModeBox.SelectedIndex == 1 ? "light" : "dark")
+            : (ThemeService.IsDark ? "dark" : "light");
+        var accent = (ThemeBox.SelectedItem as ThemeService.Theme)?.Key ?? "blue";
+        ThemeService.Apply(mode, accent);
+        _services.Settings.Current.ThemeMode = mode;
+        _services.Settings.Current.AccentTheme = accent;
+        try
+        {
+            await _services.Settings.SaveAsync();
+        }
+        catch (Exception ex)
+        {
+            _services.Log.Error("保存外观设置失败", ex);
+        }
     }
 
     private void LoadSettings()
@@ -322,10 +346,89 @@ public partial class SettingsView : UserControl
         window.ShowDialog();
     }
 
-    private void Update_Click(object sender, RoutedEventArgs e)
+    private async void Update_Click(object sender, RoutedEventArgs e)
     {
-        var window = new UpdateWindow(_services) { Owner = Window.GetWindow(this) };
-        window.ShowDialog();
+        if (_updating) return;
+        _updating = true;
+        UpdateButton.IsEnabled = false;
+        UpdateProgress.Visibility = Visibility.Visible;
+        UpdateProgress.IsIndeterminate = true;
+        UpdateProgress.Value = 0;
+        UpdateStatus.Visibility = Visibility.Visible;
+        UpdateStatus.Text = "正在从 GitHub 检查更新…";
+        try
+        {
+            var update = await _services.Updates.CheckAsync(UpdateService.GitHubReleaseUrl);
+            if (update is null)
+            {
+                UpdateProgress.Visibility = Visibility.Collapsed;
+                UpdateStatus.Text = "当前已是最新版本";
+                return;
+            }
+
+            UpdateProgress.IsIndeterminate = false;
+            UpdateStatus.Text = $"发现新版本 {update.Version}，正在后台下载…";
+            var progress = new Progress<InstallProgress>(p =>
+            {
+                UpdateProgress.IsIndeterminate = false;
+                UpdateProgress.Value = Math.Clamp(p.Fraction, 0, 1);
+                UpdateStatus.Text = $"{p.Stage} · {p.Detail}";
+            });
+
+            string? setupPath = null;
+            if (update.IsInstaller)
+            {
+                setupPath = await _services.Updates.DownloadInstallerAsync(update, progress);
+            }
+            else
+            {
+                var staged = await _services.Updates.DownloadAndStageAsync(update, progress);
+                setupPath = staged.ArchivePath;
+            }
+
+            UpdateProgress.Value = 1;
+            UpdateStatus.Text = $"新版本 {update.Version} 下载完成";
+
+            if (!MessageDialog.Confirm(Window.GetWindow(this), "更新已下载",
+                    $"新版本 {update.Version} 已下载完成。\n是否立即重启并安装？", "重启并安装"))
+            {
+                UpdateStatus.Text = "更新已下载，可稍后重新检查更新进行安装";
+                return;
+            }
+
+            if (update.IsInstaller)
+            {
+                Process.Start(new ProcessStartInfo(setupPath!)
+                {
+                    UseShellExecute = true,
+                    Arguments = "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS"
+                });
+            }
+            else
+            {
+                var exe = Environment.ProcessPath
+                          ?? throw new InvalidOperationException("无法定位启动器可执行文件");
+                _services.Updates.LaunchInstaller(
+                    new StagedUpdate(update.Version,
+                        Path.Combine(_services.Paths.AppRoot, "updates", "staging-" + update.Version),
+                        setupPath!), exe);
+            }
+
+            Application.Current.Shutdown();
+        }
+        catch (Exception ex)
+        {
+            _services.Log.Error("检查或下载更新失败", ex);
+            UpdateProgress.Visibility = Visibility.Collapsed;
+            UpdateStatus.Text = "更新失败：" + ex.Message;
+            _state.Notify("更新失败：" + ex.Message, true);
+        }
+        finally
+        {
+            _updating = false;
+            UpdateButton.IsEnabled = true;
+            UpdateProgress.IsIndeterminate = false;
+        }
     }
 
     private void OpenGameRoot_Click(object sender, RoutedEventArgs e)

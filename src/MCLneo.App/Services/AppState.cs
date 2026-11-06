@@ -29,6 +29,13 @@ public sealed class AppState : ObservableObject, IDisposable
     private RoomSession? _activeRoom;
     private string? _roomInviteCode;
     private string? _roomConnectAddress;
+    private Ipv6DirectSession? _directSession;
+    private bool _isDirectBusy;
+    private string _directStatus = "";
+    private double _directProgress;
+    private string? _directShareAddress;
+    private string? _directConnectAddress;
+    private string _directRoleText = "";
     private string _roomRoleText = "未连接";
     private bool _isInitialized;
 
@@ -251,6 +258,44 @@ public sealed class AppState : ObservableObject, IDisposable
     {
         get => _roomConnectAddress;
         private set => SetProperty(ref _roomConnectAddress, value);
+    }
+
+    public bool IsDirectActive => _directSession?.IsRunning == true;
+
+    public bool IsDirectBusy
+    {
+        get => _isDirectBusy;
+        private set => SetProperty(ref _isDirectBusy, value);
+    }
+
+    public string DirectStatus
+    {
+        get => _directStatus;
+        private set => SetProperty(ref _directStatus, value);
+    }
+
+    public double DirectProgress
+    {
+        get => _directProgress;
+        private set => SetProperty(ref _directProgress, value);
+    }
+
+    public string? DirectShareAddress
+    {
+        get => _directShareAddress;
+        private set => SetProperty(ref _directShareAddress, value);
+    }
+
+    public string? DirectConnectAddress
+    {
+        get => _directConnectAddress;
+        private set => SetProperty(ref _directConnectAddress, value);
+    }
+
+    public string DirectRoleText
+    {
+        get => _directRoleText;
+        private set => SetProperty(ref _directRoleText, value);
     }
 
     public string RoomRoleText
@@ -591,6 +636,112 @@ public sealed class AppState : ObservableObject, IDisposable
         }
     }
 
+    public async Task HostDirectAsync(int gamePort)
+    {
+        if (IsDirectBusy || IsDirectActive)
+        {
+            Notify("你已经在 IPv6 直连中", true);
+            return;
+        }
+
+        if (IsRoomActive)
+        {
+            Notify("请先离开 EasyTier 房间，再创建 IPv6 直连", true);
+            return;
+        }
+
+        IsDirectBusy = true;
+        DirectStatus = "正在准备 IPv6 直连…";
+        DirectProgress = 0;
+        try
+        {
+            var progress = new Progress<Ipv6DirectProgress>(p =>
+            {
+                DirectStatus = p.Detail;
+                DirectProgress = Math.Clamp(p.Fraction, 0, 1);
+            });
+            _directSession = await _services.DirectRooms.HostAsync(gamePort, progress);
+            DirectShareAddress = _directSession.ShareAddress;
+            DirectConnectAddress = null;
+            DirectRoleText = "房主";
+            DirectStatus = "IPv6 直连已开启，把地址发给朋友";
+            DirectProgress = 1;
+            OnPropertyChanged(nameof(IsDirectActive));
+            Notify("IPv6 直连已开启", false);
+        }
+        catch (Exception ex)
+        {
+            _services.Log.Error("创建 IPv6 直连失败", ex);
+            DirectStatus = "创建失败：" + ex.Message;
+            Notify("创建 IPv6 直连失败：" + ex.Message, true);
+        }
+        finally
+        {
+            IsDirectBusy = false;
+        }
+    }
+
+    public async Task JoinDirectAsync(string endpoint)
+    {
+        if (IsDirectBusy || IsDirectActive)
+        {
+            Notify("你已经在 IPv6 直连中", true);
+            return;
+        }
+
+        if (IsRoomActive)
+        {
+            Notify("请先离开 EasyTier 房间，再加入 IPv6 直连", true);
+            return;
+        }
+
+        IsDirectBusy = true;
+        DirectStatus = "正在连接房主…";
+        DirectProgress = 0;
+        try
+        {
+            var progress = new Progress<Ipv6DirectProgress>(p =>
+            {
+                DirectStatus = p.Detail;
+                DirectProgress = Math.Clamp(p.Fraction, 0, 1);
+            });
+            _directSession = await _services.DirectRooms.JoinAsync(endpoint, progress);
+            DirectShareAddress = null;
+            DirectConnectAddress = _directSession.ConnectAddress;
+            DirectRoleText = "成员";
+            DirectStatus = "已连接，在多人游戏中连接下面的地址";
+            DirectProgress = 1;
+            OnPropertyChanged(nameof(IsDirectActive));
+            Notify("已加入 IPv6 直连", false);
+        }
+        catch (Exception ex)
+        {
+            _services.Log.Error("加入 IPv6 直连失败", ex);
+            DirectStatus = "连接失败：" + ex.Message;
+            Notify("加入 IPv6 直连失败：" + ex.Message, true);
+        }
+        finally
+        {
+            IsDirectBusy = false;
+        }
+    }
+
+    public async Task StopDirectAsync()
+    {
+        var session = _directSession;
+        if (session is null) return;
+        await session.StopAsync();
+        session.Dispose();
+        _directSession = null;
+        DirectShareAddress = null;
+        DirectConnectAddress = null;
+        DirectRoleText = "";
+        DirectStatus = "已断开 IPv6 直连";
+        DirectProgress = 0;
+        OnPropertyChanged(nameof(IsDirectActive));
+        Notify("已断开 IPv6 直连", false);
+    }
+
     public async Task StopRoomAsync()
     {
         var room = ActiveRoom;
@@ -661,6 +812,7 @@ public sealed class AppState : ObservableObject, IDisposable
     public void Dispose()
     {
         try { ActiveRoom?.Dispose(); } catch { }
+        try { _directSession?.Dispose(); } catch { }
         // Do not dispose ActiveSession here: if the game is still running the user
         // expects it to keep running, and Process.Dispose during an exit callback
         // can block the UI thread. The OS closes our handle when the process exits.

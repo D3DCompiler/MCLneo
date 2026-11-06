@@ -6,7 +6,7 @@ namespace MCLneo.App;
 
 public partial class App : Application
 {
-    private const string InstanceMutexName = @"Local\MCLneo.SingleInstance.2026-11-06-r2";
+    private const string InstanceMutexName = @"Local\MCLneo.SingleInstance.2026-11-07-r3";
     private Services.AppServices? _services;
     private Services.AppState? _state;
     private static Mutex? _singleInstanceMutex;

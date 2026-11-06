@@ -4,7 +4,7 @@
         Title="从 Modrinth 添加模组" Width="760" Height="640"
         WindowStartupLocation="CenterOwner" WindowStyle="None" AllowsTransparency="True"
         Background="Transparent" ResizeMode="NoResize" ShowInTaskbar="False"
-        Loaded="Window_Loaded">
+        Loaded="Window_Loaded" TextElement.Foreground="{DynamicResource TextBrush}">
     <Border Background="{DynamicResource BgBrush}" BorderBrush="{DynamicResource BorderStrongBrush}"
             BorderThickness="1" CornerRadius="18">
         <Grid Margin="24">

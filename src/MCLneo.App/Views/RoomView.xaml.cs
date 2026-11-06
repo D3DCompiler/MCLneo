@@ -61,6 +61,51 @@ public partial class RoomView : UserControl
         }
     }
 
+    private async void HostDirect_Click(object sender, RoutedEventArgs e)
+    {
+        if (!int.TryParse(DirectHostPortBox.Text.Trim(), out var port) || port is < 1024 or > 65535)
+        {
+            _state.Notify("请输入 1024–65535 的有效游戏端口", true);
+            DirectHostPortBox.Focus();
+            return;
+        }
+
+        await _state.HostDirectAsync(port);
+    }
+
+    private async void JoinDirect_Click(object sender, RoutedEventArgs e)
+    {
+        var endpoint = DirectJoinEndpointBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(endpoint))
+        {
+            _state.Notify("请输入房主的 IPv6 地址和端口", true);
+            DirectJoinEndpointBox.Focus();
+            return;
+        }
+
+        await _state.JoinDirectAsync(endpoint);
+    }
+
+    private void CopyDirect_Click(object sender, RoutedEventArgs e)
+    {
+        var text = _state.DirectShareAddress ?? _state.DirectConnectAddress;
+        if (!string.IsNullOrWhiteSpace(text))
+        {
+            TryCopy(text, "IPv6 直连地址已复制");
+        }
+    }
+
+    private async void StopDirect_Click(object sender, RoutedEventArgs e)
+    {
+        if (!MessageDialog.Confirm(Window.GetWindow(this), "断开 IPv6 直连",
+                "断开后朋友将无法继续连接。确定要断开吗？", "断开", danger: true))
+        {
+            return;
+        }
+
+        await _state.StopDirectAsync();
+    }
+
     private bool EnsureElevated()
     {
         if (ElevationService.IsElevated)

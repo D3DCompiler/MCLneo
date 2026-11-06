@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="创建新游戏" Width="690" SizeToContent="Height" MaxHeight="820" WindowStyle="None"
         ResizeMode="NoResize" WindowStartupLocation="CenterOwner" Background="{DynamicResource BgBrush}"
-        ShowInTaskbar="False" Loaded="Window_Loaded" Closing="Window_Closing">
+        ShowInTaskbar="False" Loaded="Window_Loaded" Closing="Window_Closing" TextElement.Foreground="{DynamicResource TextBrush}">
     <Border Background="{DynamicResource BgBrush}" BorderBrush="{DynamicResource BorderStrongBrush}" BorderThickness="1" CornerRadius="18">
         <Grid>
             <Grid.RowDefinitions>
