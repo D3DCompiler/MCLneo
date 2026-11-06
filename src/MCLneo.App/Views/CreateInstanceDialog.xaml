@@ -1,7 +1,7 @@
 <Window x:Class="MCLneo.App.Views.CreateInstanceDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="创建实例" Width="690" SizeToContent="Height" MaxHeight="820" WindowStyle="None"
+        Title="创建新游戏" Width="690" SizeToContent="Height" MaxHeight="820" WindowStyle="None"
         ResizeMode="NoResize" WindowStartupLocation="CenterOwner" Background="{DynamicResource BgBrush}"
         ShowInTaskbar="False" Loaded="Window_Loaded" Closing="Window_Closing">
     <Border Background="{DynamicResource BgBrush}" BorderBrush="{DynamicResource BorderStrongBrush}" BorderThickness="1" CornerRadius="18">
@@ -16,7 +16,8 @@
                     Background="{DynamicResource TitleBarBrush}" CornerRadius="18,18,0,0" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
                 <Grid Margin="24,0,12,0">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Text="新建实例" FontSize="14" FontWeight="SemiBold"/>
+                        <TextBlock Text="新建游戏" FontSize="14" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextBrush}"/>
                         <Border Style="{StaticResource AccentTagBorder}" Margin="10,0,0,0" Padding="8,2">
                             <TextBlock Text="安装器" FontSize="8" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}"/>
                         </Border>
@@ -26,14 +27,14 @@
                 </Grid>
             </Border>
 
-            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" MaxHeight="620">
+            <ScrollViewer x:Name="FormScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto" MaxHeight="620">
                 <StackPanel x:Name="FormPanel" Margin="28,22,28,8">
                     <TextBlock Text="从零开始，创建一个独立的游戏空间" FontSize="21" FontWeight="Bold"
                                Foreground="{DynamicResource TextBrush}"/>
-                    <TextBlock Text="MCLneo 会把游戏文件放在共享库中，而把模组、存档和配置放进这个实例自己的目录。"
+                    <TextBlock Text="MCLneo 会把游戏文件放在共享库中，而把模组、存档和配置放进这个游戏自己的目录。"
                                Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,6,0,20"/>
 
-                    <TextBlock Text="实例名称" Style="{StaticResource SectionLabel}" Margin="1,0,0,7"/>
+                    <TextBlock Text="游戏名称" Style="{StaticResource SectionLabel}" Margin="1,0,0,7"/>
                     <TextBox x:Name="NameBox" Height="42" FontSize="14" Foreground="{DynamicResource TextBrush}"
                              TextChanged="NameBox_TextChanged"/>
                     <TextBlock x:Name="PathPreview" Style="{StaticResource Caption}" Margin="2,6,0,0"
@@ -54,7 +55,7 @@
                                 <DataTemplate>
                                     <Grid MinWidth="400">
                                         <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="{Binding Id}" FontWeight="SemiBold" FontSize="12.5"/>
+                                            <TextBlock Text="{Binding Id}" FontWeight="SemiBold" FontSize="12.5" Foreground="{DynamicResource TextBrush}"/>
                                             <Border Style="{StaticResource TagBorder}" Padding="7,1" Margin="8,0,0,0">
                                                 <TextBlock Text="{Binding Type}" FontSize="9" Foreground="{DynamicResource MutedBrush}"/>
                                             </Border>
@@ -122,6 +123,19 @@
                                Style="{StaticResource Caption}" Foreground="{DynamicResource WarningBrush}"
                                Margin="2,8,0,0"/>
 
+                    <StackPanel x:Name="ModsPanel" Margin="0,18,0,0" Visibility="Collapsed">
+                        <Grid>
+                            <TextBlock Text="模组（可选）" Style="{StaticResource SectionLabel}"/>
+                            <TextBlock x:Name="ModsSummary" Text="未选择" Style="{StaticResource Caption}"
+                                       HorizontalAlignment="Right"/>
+                        </Grid>
+                        <Button x:Name="AddModsButton" Content="添加本地模组…"
+                                Style="{StaticResource SecondaryButton}" HorizontalAlignment="Left"
+                                Padding="14,8" Margin="0,7,0,0" Click="AddMods_Click"/>
+                        <TextBlock Text="创建完成后会自动复制到游戏的 mods 目录。"
+                                   Style="{StaticResource Caption}" Margin="2,6,0,0"/>
+                    </StackPanel>
+
                     <TextBlock x:Name="LoaderVersionLabel" Text="加载器版本（可选）" Style="{StaticResource SectionLabel}"
                                Margin="1,18,0,7"/>
                     <TextBox x:Name="LoaderVersionBox" Height="40" IsEnabled="False"
@@ -144,7 +158,8 @@
                                 <TextBlock x:Name="ProgressPercent" Text="0%" Style="{StaticResource Caption}"
                                            HorizontalAlignment="Right"/>
                             </Grid>
-                            <ProgressBar x:Name="InstallProgressBar" Height="7" Margin="0,11,0,0"/>
+                            <ProgressBar x:Name="InstallProgressBar" Minimum="0" Maximum="1"
+                                         Height="7" Margin="0,11,0,0"/>
                             <TextBlock x:Name="ProgressDetail" Text="" Style="{StaticResource Muted}" FontSize="11"
                                        TextTrimming="CharacterEllipsis" Margin="0,8,0,0"/>
                             <TextBlock x:Name="ProgressCount" Text="" Style="{StaticResource Caption}" Margin="0,3,0,0"/>

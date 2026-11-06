@@ -66,7 +66,7 @@ public partial class InstancesView : UserControl
     {
         await _state.RefreshInstancesAsync();
         _view.Refresh();
-        _state.Notify("实例列表已刷新", false);
+        _state.Notify("游戏列表已刷新", false);
     }
 
     private async void Create_Click(object sender, RoutedEventArgs e)
@@ -124,11 +124,11 @@ public partial class InstancesView : UserControl
         var instance = ResolveInstance(sender);
         if (instance is null) return;
         var owner = Window.GetWindow(this);
-        var name = InputDialog.Show(owner, "重命名实例", "给这个实例取一个更容易记住的名字。", instance.Name);
+        var name = InputDialog.Show(owner, "重命名游戏", "给这个游戏取一个更容易记住的名字。", instance.Name);
         if (string.IsNullOrWhiteSpace(name) || name == instance.Name) return;
         await _services.Instances.RenameAsync(instance, name);
         await _state.RefreshInstancesAsync(instance.Id);
-        _state.Notify("实例已重命名", false);
+        _state.Notify("游戏已重命名", false);
     }
 
     private async void Delete_Click(object sender, RoutedEventArgs e)
@@ -136,7 +136,7 @@ public partial class InstancesView : UserControl
         var instance = ResolveInstance(sender);
         if (instance is null) return;
         var owner = Window.GetWindow(this);
-        if (!MessageDialog.Confirm(owner, "删除实例",
+        if (!MessageDialog.Confirm(owner, "删除游戏",
                 $"将把「{instance.Name}」移动到 MCLneo 的回收目录。\n不会立即永久删除，但你将无法在启动器中看到它。",
                 "移到回收目录", danger: true))
         {
@@ -145,7 +145,7 @@ public partial class InstancesView : UserControl
 
         await _services.Instances.DeleteAsync(instance);
         await _state.RefreshInstancesAsync();
-        _state.Notify("实例已移到回收目录", false);
+        _state.Notify("游戏已移到回收目录", false);
     }
 
     private void Logs_Click(object sender, RoutedEventArgs e)
@@ -160,7 +160,7 @@ public partial class InstancesView : UserControl
     {
         var instance = ResolveInstance(sender);
         if (instance is null) return;
-        ShowBusy("正在修复实例", "检查基础版本、运行库与资源索引…");
+        ShowBusy("正在修复游戏", "检查基础版本、运行库与资源索引…");
         try
         {
             var progress = new Progress<InstallProgress>(p =>
@@ -170,11 +170,11 @@ public partial class InstancesView : UserControl
                 BusyPercent.Text = p.Fraction.ToString("P0");
             });
             await _services.Installer.RepairAsync(instance, progress);
-            _state.Notify("实例修复完成", false);
+            _state.Notify("游戏修复完成", false);
         }
         catch (Exception ex)
         {
-            _services.Log.Error("修复实例失败", ex);
+            _services.Log.Error("修复游戏失败", ex);
             _state.Notify("修复失败：" + ex.Message, true);
             MessageDialog.Show(Window.GetWindow(this), "修复失败", ex.Message);
         }
@@ -191,14 +191,14 @@ public partial class InstancesView : UserControl
         Directory.CreateDirectory(AppState.ExportDirectory);
         var dialog = new SaveFileDialog
         {
-            Title = "导出 MCLneo 实例",
-            Filter = "MCLneo 实例包 (*.mclneopack)|*.mclneopack|Zip 压缩包 (*.zip)|*.zip",
+            Title = "导出 MCLneo 游戏",
+            Filter = "MCLneo 游戏包 (*.mclneopack)|*.mclneopack|Zip 压缩包 (*.zip)|*.zip",
             FileName = $"{instance.Id}-{DateTime.Now:yyyyMMdd}.mclneopack",
             InitialDirectory = AppState.ExportDirectory
         };
         if (dialog.ShowDialog(Window.GetWindow(this)) != true) return;
 
-        ShowBusy("正在导出实例", "正在打包模组、配置与存档…");
+        ShowBusy("正在导出游戏", "正在打包模组、配置与存档…");
         try
         {
             var progress = new Progress<double>(value =>
@@ -207,11 +207,11 @@ public partial class InstancesView : UserControl
                 BusyPercent.Text = $"{value:P0}";
             });
             await _services.Instances.ExportAsync(instance, dialog.FileName, true, progress);
-            _state.Notify("实例已导出：" + Path.GetFileName(dialog.FileName), false);
+            _state.Notify("游戏已导出：" + Path.GetFileName(dialog.FileName), false);
         }
         catch (Exception ex)
         {
-            _services.Log.Error("导出实例失败", ex);
+            _services.Log.Error("导出游戏失败", ex);
             _state.Notify("导出失败：" + ex.Message, true);
         }
         finally
@@ -238,20 +238,20 @@ public partial class InstancesView : UserControl
         _services.Settings.Current.GameRoot = Path.GetFullPath(root);
         await _state.SaveSettingsAsync();
         await _state.RefreshInstancesAsync();
-        _state.Notify("已切换到该游戏目录，PCL2/原版实例已导入列表", false);
+        _state.Notify("已切换到该游戏目录，已有游戏版本已导入列表", false);
     }
 
     private async void Import_Click(object sender, RoutedEventArgs e)
     {
         var dialog = new OpenFileDialog
         {
-            Title = "导入 MCLneo 实例",
-            Filter = "MCLneo 实例包 (*.mclneopack;*.zip)|*.mclneopack;*.zip|所有文件 (*.*)|*.*",
+            Title = "导入 MCLneo 游戏",
+            Filter = "MCLneo 游戏包 (*.mclneopack;*.zip)|*.mclneopack;*.zip|所有文件 (*.*)|*.*",
             CheckFileExists = true
         };
         if (dialog.ShowDialog(Window.GetWindow(this)) != true) return;
 
-        ShowBusy("正在导入实例", "正在校验并解压实例包…");
+        ShowBusy("正在导入游戏", "正在校验并解压游戏包…");
         try
         {
             var progress = new Progress<double>(value =>
@@ -260,14 +260,14 @@ public partial class InstancesView : UserControl
                 BusyPercent.Text = $"{value * 0.85:P0}";
             });
             var imported = await _services.Instances.ImportAsync(dialog.FileName, null, progress);
-            ShowBusy("正在读取实例", "正在刷新实例库…");
+            ShowBusy("正在读取游戏", "正在刷新游戏库…");
             await _state.RefreshInstancesAsync(imported.Id);
             _state.SelectedInstance = _state.Instances.FirstOrDefault(i => i.Id == imported.Id);
-            _state.Notify("实例已导入", false);
+            _state.Notify("游戏已导入", false);
         }
         catch (Exception ex)
         {
-            _services.Log.Error("导入实例失败", ex);
+            _services.Log.Error("导入游戏失败", ex);
             _state.Notify("导入失败：" + ex.Message, true);
         }
         finally

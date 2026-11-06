@@ -72,8 +72,8 @@ public sealed class AppState : ObservableObject, IDisposable
     }
 
     public bool HasSelectedInstance => SelectedInstance is not null;
-    public string SelectedInstanceTitle => SelectedInstance?.Name ?? "还没有实例";
-    public string SelectedInstanceSubtitle => SelectedInstance?.Subtitle ?? "先创建一个 Minecraft 实例，开始你的冒险。";
+    public string SelectedInstanceTitle => SelectedInstance?.Name ?? "还没有游戏";
+    public string SelectedInstanceSubtitle => SelectedInstance?.Subtitle ?? "先创建一个 Minecraft 游戏，开始你的冒险。";
 
     public string PlayerName
     {
@@ -361,7 +361,7 @@ public sealed class AppState : ObservableObject, IDisposable
         instance ??= SelectedInstance;
         if (instance is null)
         {
-            Notify("请先创建一个实例", true);
+            Notify("请先创建一个游戏", true);
             return;
         }
 

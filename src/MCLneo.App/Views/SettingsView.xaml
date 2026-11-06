@@ -9,7 +9,7 @@
             <Grid Margin="2,0,0,20">
                 <StackPanel>
                     <TextBlock Text="设置" Style="{StaticResource H2}"/>
-                    <TextBlock Text="调整启动器行为。修改游戏目录后，实例列表会自动重新扫描。"
+                    <TextBlock Text="调整启动器行为。修改游戏目录后，游戏列表会自动重新扫描。"
                                Style="{StaticResource Muted}" Margin="0,6,0,0"/>
                 </StackPanel>
                 <Button Content="保存设置" Style="{StaticResource PrimaryButton}" Padding="20,9"
@@ -79,7 +79,7 @@
             <Border Style="{StaticResource Card}" Padding="22" Margin="0,14,0,0">
                 <StackPanel>
                     <TextBlock Text="游戏与 Java" Style="{StaticResource H3}"/>
-                    <TextBlock Text="游戏文件会存放在这里；每个实例仍拥有独立的模组、存档与配置目录。"
+                    <TextBlock Text="游戏文件会存放在这里；每个游戏仍拥有独立的模组、存档与配置目录。"
                                Style="{StaticResource Muted}" Margin="0,5,0,16"/>
 
                     <TextBlock Text="游戏目录" Style="{StaticResource SectionLabel}" Margin="1,0,0,7"/>

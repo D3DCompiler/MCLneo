@@ -1,6 +1,7 @@
 using System.IO;
 using System.Windows;
 using System.Windows.Input;
+using Microsoft.Win32;
 using MCLneo.App.Services;
 using MCLneo.Core;
 using MCLneo.Core.Infrastructure;
@@ -19,6 +20,7 @@ public partial class CreateInstanceDialog : Window
     private bool _loading;
     private bool _installing;
     private bool _closeRequested;
+    private readonly List<string> _selectedMods = new();
     private CancellationTokenSource? _cts;
 
     public CreateInstanceDialog(AppServices services, AppState state, string? preselectedVersion = null)
@@ -159,10 +161,40 @@ public partial class CreateInstanceDialog : Window
                      LoaderForge?.IsChecked == true || LoaderNeoForge?.IsChecked == true;
         LoaderVersionBox.IsEnabled = modded;
         LoaderVersionLabel.Text = modded ? "加载器版本（可选）" : "加载器版本";
+        if (ModsPanel is not null)
+        {
+            ModsPanel.Visibility = modded ? Visibility.Visible : Visibility.Collapsed;
+            if (modded)
+            {
+                _ = Dispatcher.BeginInvoke(new Action(() => ModsPanel.BringIntoView()));
+            }
+        }
+
         if (!modded)
         {
             LoaderVersionBox.Text = "";
         }
+    }
+
+    private void AddMods_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new OpenFileDialog
+        {
+            Title = "选择要加入游戏的模组",
+            Filter = "模组文件 (*.jar)|*.jar|所有文件 (*.*)|*.*",
+            Multiselect = true
+        };
+        if (dialog.ShowDialog(this) != true) return;
+
+        foreach (var file in dialog.FileNames)
+        {
+            if (!_selectedMods.Contains(file, StringComparer.OrdinalIgnoreCase))
+            {
+                _selectedMods.Add(file);
+            }
+        }
+
+        ModsSummary.Text = _selectedMods.Count == 0 ? "未选择" : $"已选择 {_selectedMods.Count} 个文件";
     }
 
     private LoaderKind SelectedLoader => LoaderFabric.IsChecked == true
@@ -192,7 +224,7 @@ public partial class CreateInstanceDialog : Window
         var name = NameBox.Text.Trim();
         if (string.IsNullOrWhiteSpace(name))
         {
-            ShowError("实例名称不能为空");
+            ShowError("游戏名称不能为空");
             return;
         }
 
@@ -211,8 +243,9 @@ public partial class CreateInstanceDialog : Window
         InstallButton.IsEnabled = false;
         CancelButton.Content = "取消安装";
         ProgressPanel.Visibility = Visibility.Visible;
+        _ = Dispatcher.BeginInvoke(new Action(() => FormScroll.ScrollToEnd()));
         ProgressStage.Text = "准备安装";
-        ProgressDetail.Text = "正在建立实例目录…";
+        ProgressDetail.Text = "正在建立游戏目录…";
         ProgressCount.Text = "";
         InstallProgressBar.Value = 0;
         ProgressPercent.Text = "0%";
@@ -234,7 +267,29 @@ public partial class CreateInstanceDialog : Window
                     string.IsNullOrWhiteSpace(loaderVersion) ? null : loaderVersion, progress, _cts.Token)
                 : await _services.Installer.InstallAsync(new InstallRequest(version, name, selectedLoader,
                     string.IsNullOrWhiteSpace(loaderVersion) ? null : loaderVersion), progress, _cts.Token);
-            _state.Notify($"实例「{Result.Name}」安装完成", false);
+            var copiedMods = 0;
+            if (selectedLoader != LoaderKind.Vanilla && _selectedMods.Count > 0)
+            {
+                try
+                {
+                    Directory.CreateDirectory(Result.ModsDirectory);
+                    foreach (var file in _selectedMods)
+                    {
+                        var modName = PathSafety.SafeFileName(Path.GetFileName(file), "mod.jar");
+                        File.Copy(file, Path.Combine(Result.ModsDirectory, modName), true);
+                        copiedMods++;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _services.Log.Error("复制创建时选择的模组失败", ex);
+                    _state.Notify("游戏已创建，但部分模组复制失败：" + ex.Message, true);
+                }
+            }
+
+            _state.Notify(copiedMods > 0
+                ? $"游戏「{Result.Name}」安装完成，已添加 {copiedMods} 个模组"
+                : $"游戏「{Result.Name}」安装完成", false);
             DialogResult = true;
             Close();
         }
@@ -246,7 +301,7 @@ public partial class CreateInstanceDialog : Window
         }
         catch (Exception ex)
         {
-            _services.Log.Error("安装实例失败", ex);
+            _services.Log.Error("安装游戏失败", ex);
             ProgressStage.Text = "安装失败";
             ProgressDetail.Text = ex.Message;
             ProgressPanel.Visibility = Visibility.Collapsed;

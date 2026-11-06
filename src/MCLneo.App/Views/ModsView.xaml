@@ -17,23 +17,25 @@
         <Grid Grid.Row="0">
             <StackPanel>
                 <TextBlock Text="模组与资源" Style="{StaticResource H2}"/>
-                <TextBlock Text="在 Modrinth 中搜索，并直接安装到当前实例。依赖项会自动补齐。"
+                <TextBlock Text="在 Modrinth 中搜索，并直接安装到当前游戏。依赖项会自动补齐。"
                            Style="{StaticResource Muted}" Margin="1,6,0,0"/>
             </StackPanel>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                <TextBlock Text="目标实例" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,9,0"/>
+                <TextBlock Text="目标游戏" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,9,0"/>
                 <ComboBox x:Name="InstanceBox" Width="240" Height="38" ItemsSource="{Binding Instances}"
                           SelectedItem="{Binding SelectedInstance, Mode=TwoWay}"
                           SelectionChanged="InstanceBox_SelectionChanged">
                     <ComboBox.ItemTemplate>
                         <DataTemplate>
                             <StackPanel>
-                                <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="SemiBold"/>
+                                <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
                                 <TextBlock Text="{Binding Subtitle}" FontSize="9" Foreground="{DynamicResource MutedBrush}"/>
                             </StackPanel>
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
                 </ComboBox>
+                <Button Content="导入本地" Style="{StaticResource SecondaryButton}" Height="38"
+                        Padding="13,0" Margin="8,0,0,0" Click="ImportLocal_Click"/>
             </StackPanel>
         </Grid>
 
@@ -149,7 +151,7 @@
                                            Foreground="{DynamicResource FaintBrush}" HorizontalAlignment="Center"/>
                                 <TextBlock Text="没有找到匹配的项目" FontSize="15" FontWeight="SemiBold"
                                            HorizontalAlignment="Center" Margin="0,10,0,0"/>
-                                <TextBlock Text="换一个关键词，或者检查实例的游戏版本与加载器。"
+                                <TextBlock Text="换一个关键词，或者检查游戏的游戏版本与加载器。"
                                            Style="{StaticResource Muted}" HorizontalAlignment="Center" Margin="0,5,0,0"/>
                             </StackPanel>
                         </Border>
@@ -208,7 +210,7 @@
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
-                <TextBlock x:Name="InstalledEmpty" Text="这个实例还没有安装任何项目。切换到「发现」开始浏览。"
+                <TextBlock x:Name="InstalledEmpty" Text="这个游戏还没有安装任何项目。切换到「发现」开始浏览。"
                            Style="{StaticResource Muted}" HorizontalAlignment="Center" VerticalAlignment="Center"
                            Visibility="Collapsed"/>
             </Grid>
@@ -221,9 +223,9 @@
                                    Foreground="{DynamicResource FaintBrush}" HorizontalAlignment="Center"
                                    VerticalAlignment="Center"/>
                     </Border>
-                    <TextBlock Text="先选择一个实例" FontSize="18" FontWeight="SemiBold" HorizontalAlignment="Center"
+                    <TextBlock Text="先选择一个游戏" FontSize="18" FontWeight="SemiBold" HorizontalAlignment="Center"
                                Foreground="{DynamicResource TextBrush}" Margin="0,16,0,0"/>
-                    <TextBlock Text="模组、资源包和光影都会安装到实例自己的目录里。创建实例后就可以开始搜索。"
+                    <TextBlock Text="模组、资源包和光影都会安装到游戏自己的目录里。创建新游戏后就可以开始搜索。"
                                Style="{StaticResource Muted}" TextWrapping="Wrap" TextAlignment="Center"
                                MaxWidth="430" Margin="0,7,0,0"/>
                 </StackPanel>
@@ -244,7 +246,7 @@
 
         <Grid Grid.Row="5" Margin="2,11,0,0">
             <TextBlock x:Name="InstanceHint" Text="" Style="{StaticResource Caption}"/>
-            <TextBlock Text="数据来源：Modrinth · 安装前请确认实例已关闭" Style="{StaticResource Caption}"
+            <TextBlock Text="数据来源：Modrinth · 安装前请确认游戏已关闭" Style="{StaticResource Caption}"
                        HorizontalAlignment="Right"/>
         </Grid>
     </Grid>

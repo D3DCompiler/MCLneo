@@ -4,8 +4,10 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using Microsoft.Win32;
 using MCLneo.App.Services;
 using MCLneo.Core;
+using MCLneo.Core.Infrastructure;
 using MCLneo.Core.Models;
 using MCLneo.Core.Mods;
 
@@ -69,7 +71,7 @@ public partial class ModsView : UserControl
         {
             DiscoverPanel.Visibility = Visibility.Collapsed;
             InstalledPanel.Visibility = Visibility.Collapsed;
-            InstanceHint.Text = "未选择实例";
+            InstanceHint.Text = "未选择游戏";
             return;
         }
 
@@ -79,7 +81,7 @@ public partial class ModsView : UserControl
         var vanillaMods = _projectType == "mod" && instance.Loader == LoaderKind.Vanilla;
         WarningPanel.Visibility = vanillaMods ? Visibility.Visible : Visibility.Collapsed;
         WarningText.Text = vanillaMods
-            ? "当前实例是原版，原版无法加载模组。请创建一个 Fabric/Quilt 实例，或改用资源包/光影。"
+            ? "当前游戏是原版，原版无法加载模组。请创建一个 Fabric/Quilt 游戏，或改用资源包/光影。"
             : "";
         if (!_showDiscover)
         {
@@ -124,6 +126,61 @@ public partial class ModsView : UserControl
         if (_showDiscover && _state.SelectedInstance is not null)
         {
             _ = SearchAsync(reset: true);
+        }
+    }
+
+    private void ImportLocal_Click(object sender, RoutedEventArgs e)
+    {
+        var instance = _state.SelectedInstance;
+        if (instance is null)
+        {
+            _state.Notify("请先选择一个游戏", true);
+            return;
+        }
+
+        if (_projectType == "mod" && instance.Loader == LoaderKind.Vanilla)
+        {
+            _state.Notify("原版游戏无法加载模组，请先创建 Fabric/Quilt 游戏", true);
+            return;
+        }
+
+        var filter = _projectType switch
+        {
+            "mod" => "模组文件 (*.jar)|*.jar|所有文件 (*.*)|*.*",
+            "resourcepack" => "资源包 (*.zip)|*.zip|所有文件 (*.*)|*.*",
+            _ => "光影包 (*.zip)|*.zip|所有文件 (*.*)|*.*"
+        };
+        var dialog = new OpenFileDialog
+        {
+            Title = _projectType == "mod" ? "导入本地模组" : "导入本地资源",
+            Filter = filter,
+            Multiselect = true
+        };
+        if (dialog.ShowDialog(Window.GetWindow(this)) != true) return;
+
+        try
+        {
+            var directory = ModrinthService.TargetDirectory(instance, _projectType);
+            Directory.CreateDirectory(directory);
+            var imported = 0;
+            foreach (var file in dialog.FileNames)
+            {
+                var name = PathSafety.SafeFileName(Path.GetFileName(file), "download.jar");
+                File.Copy(file, Path.Combine(directory, name), true);
+                imported++;
+            }
+
+            _state.Notify($"已导入 {imported} 个文件", false);
+            _showDiscover = false;
+            TabInstalled.IsChecked = true;
+            DiscoverPanel.Visibility = Visibility.Collapsed;
+            InstalledPanel.Visibility = Visibility.Visible;
+            _ = LoadInstalledAsync();
+        }
+        catch (Exception ex)
+        {
+            _services.Log.Error("导入本地资源失败", ex);
+            _state.Notify("导入失败：" + ex.Message, true);
         }
     }
 
@@ -215,7 +272,7 @@ public partial class ModsView : UserControl
         if (instance is null || _busy) return;
         if (_projectType == "mod" && instance.Loader == LoaderKind.Vanilla)
         {
-            _state.Notify("原版实例无法安装模组，请先创建 Fabric 实例", true);
+            _state.Notify("原版游戏无法安装模组，请先创建 Fabric 游戏", true);
             return;
         }
 

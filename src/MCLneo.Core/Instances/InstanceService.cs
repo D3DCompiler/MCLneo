@@ -57,7 +57,7 @@ public sealed class InstanceService
             }
             catch (Exception ex)
             {
-                _log.Warn($"读取实例失败：{dir}", ex);
+                _log.Warn($"读取游戏失败：{dir}", ex);
             }
         }
 
@@ -85,7 +85,7 @@ public sealed class InstanceService
             }
             catch (Exception ex)
             {
-                _log.Warn($"实例元数据损坏：{metadataPath}", ex);
+                _log.Warn($"游戏元数据损坏：{metadataPath}", ex);
             }
         }
 
@@ -201,7 +201,7 @@ public sealed class InstanceService
     {
         if (string.IsNullOrWhiteSpace(newName))
         {
-            throw new ArgumentException("实例名称不能为空", nameof(newName));
+            throw new ArgumentException("游戏名称不能为空", nameof(newName));
         }
 
         instance.Name = newName.Trim();
@@ -214,7 +214,7 @@ public sealed class InstanceService
             $"{instance.Id}-{DateTime.Now:yyyyMMdd-HHmmss}");
         Directory.CreateDirectory(_paths.TrashDirectory);
         await Task.Run(() => Directory.Move(instance.Directory, target), ct).ConfigureAwait(false);
-        _log.Info($"实例已移入回收目录：{instance.Name} -> {target}");
+        _log.Info($"游戏已移入回收目录：{instance.Name} -> {target}");
     }
 
     public async Task<long> GetSizeAsync(GameInstance instance, CancellationToken ct = default)
@@ -318,7 +318,7 @@ public sealed class InstanceService
             }
         }
 
-        _log.Info($"导出实例：{instance.Name} -> {destinationPath}");
+        _log.Info($"导出游戏：{instance.Name} -> {destinationPath}");
         return destinationPath;
     }
 
@@ -332,7 +332,7 @@ public sealed class InstanceService
         await using var stream = File.OpenRead(archivePath);
         using var archive = new ZipArchive(stream, ZipArchiveMode.Read);
         var manifestEntry = archive.GetEntry("pack.json")
-                            ?? throw new InvalidDataException("不是有效的 MCLneo 实例包：缺少 pack.json");
+                            ?? throw new InvalidDataException("不是有效的 MCLneo 游戏包：缺少 pack.json");
         JsonNode? manifest;
         await using (var manifestStream = manifestEntry.Open())
         {
@@ -341,7 +341,7 @@ public sealed class InstanceService
 
         if (manifest?["format"]?.GetValue<string>() != "mclneo-instance")
         {
-            throw new InvalidDataException("实例包格式不受支持");
+            throw new InvalidDataException("游戏包格式不受支持");
         }
 
         var metadataName = manifest["instance"]?["name"]?.GetValue<string>() ?? "Imported";
@@ -388,7 +388,7 @@ public sealed class InstanceService
                     e.FullName.IndexOf('/') == e.FullName.LastIndexOf('/'));
                 if (jsonEntry is null)
                 {
-                    throw new InvalidDataException("实例包中缺少版本 JSON");
+                    throw new InvalidDataException("游戏包中缺少版本 JSON");
                 }
 
                 File.Copy(Path.Combine(targetDir, jsonEntry.FullName), jsonPath);
@@ -421,7 +421,7 @@ public sealed class InstanceService
 
             instance.EnsureDirectories();
             await SaveMetadataAsync(instance, ct).ConfigureAwait(false);
-            _log.Info($"导入实例：{archivePath} -> {instance.Name}");
+            _log.Info($"导入游戏：{archivePath} -> {instance.Name}");
             return instance;
         }
         catch

@@ -188,7 +188,7 @@ public sealed class LoaderInstallerService
             throw new InvalidOperationException($"安装器没有生成 {loader} 版本。日志：{installLog}");
         }
 
-        Report(progress, "创建实例", 0.9, "正在建立独立游戏目录");
+        Report(progress, "创建新游戏", 0.9, "正在建立独立游戏目录");
         var instanceId = GetUniqueInstanceId(instanceName);
         var instanceDir = Path.Combine(VersionsRoot, instanceId);
         Directory.CreateDirectory(instanceDir);
@@ -224,7 +224,7 @@ public sealed class LoaderInstallerService
                 LastPlayed = instance.LastPlayed
             }, ct).ConfigureAwait(false);
         progress?.Report(new InstallProgress("安装完成", 1, $"{instance.Name} 已准备好"));
-        _log.Info($"{loader} 实例安装完成：{instance.Name}（{installedId}）");
+        _log.Info($"{loader} 游戏安装完成：{instance.Name}（{installedId}）");
         return instance;
     }
 

@@ -402,7 +402,7 @@
                                    Focusable="False" PopupAnimation="Fade" StaysOpen="False">
                                 <Grid x:Name="DropPanel" MinWidth="{TemplateBinding ActualWidth}" MaxHeight="310">
                                     <Border x:Name="PopupGlassBorder" Background="{DynamicResource GlassBrush}"
-                                            CornerRadius="16" Padding="6" ClipToBounds="True">
+                                            CornerRadius="16" Padding="6" ClipToBounds="True" TextElement.Foreground="{DynamicResource TextBrush}">
                                         <Grid>
                                             <Border Background="{DynamicResource GlassBrush}" CornerRadius="15"
                                                     Opacity="0.55" IsHitTestVisible="False"/>
@@ -432,13 +432,14 @@
         </Style>
         <Style TargetType="ComboBoxItem">
             <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+            <Setter Property="TextElement.Foreground" Value="{DynamicResource TextBrush}"/>
             <Setter Property="Padding" Value="11,7"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ComboBoxItem">
                         <Border x:Name="Bd" Background="Transparent" CornerRadius="10" Padding="{TemplateBinding Padding}">
-                            <ContentPresenter/>
+                            <ContentPresenter TextElement.Foreground="{TemplateBinding Foreground}"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsHighlighted" Value="True">
@@ -613,7 +614,7 @@
                     <ControlTemplate TargetType="RadioButton">
                         <Border x:Name="Bd" Background="{DynamicResource InsetBrush}" BorderBrush="{DynamicResource BorderBrush}"
                                 BorderThickness="1" CornerRadius="10" Padding="14,12">
-                            <ContentPresenter/>
+                            <ContentPresenter TextElement.Foreground="{TemplateBinding Foreground}"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
@@ -651,7 +652,7 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="ListBoxItem">
                         <Border Background="Transparent" Padding="{TemplateBinding Padding}">
-                            <ContentPresenter/>
+                            <ContentPresenter TextElement.Foreground="{TemplateBinding Foreground}"/>
                         </Border>
                     </ControlTemplate>
                 </Setter.Value>

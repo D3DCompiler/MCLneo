@@ -49,7 +49,7 @@ public partial class LogViewerWindow : Window
         }
         else
         {
-            ContentView.Text = "这个实例还没有日志。启动一次游戏后会自动生成。";
+            ContentView.Text = "这个游戏还没有日志。启动一次游戏后会自动生成。";
         }
     }
 

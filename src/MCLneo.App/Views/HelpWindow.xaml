@@ -28,19 +28,19 @@
             <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="22,16">
                 <StackPanel>
                     <TextBlock Text="第一次使用" Style="{StaticResource H3}"/>
-                    <TextBlock Text="1. 在「下载中心」选择 Minecraft 版本，安装原版或 Fabric/Forge/NeoForge。&#10;2. 在「实例管理」启动实例；实例拥有独立的模组、存档和配置。&#10;3. 在「模组与资源」搜索 Modrinth 项目；在「整合包」可以创建完整整合包实例。"
+                    <TextBlock Text="1. 在「下载中心」选择 Minecraft 版本，安装原版或 Fabric/Forge/NeoForge。&#10;2. 在「游戏管理」启动游戏；游戏拥有独立的模组、存档和配置。&#10;3. 在「模组与资源」搜索 Modrinth 项目；在「整合包」可以创建完整整合包游戏。"
                                Style="{StaticResource Muted}" TextWrapping="Wrap" LineHeight="21" Margin="0,8,0,0"/>
                     <TextBlock Text="联机" Style="{StaticResource H3}" Margin="0,22,0,0"/>
                     <TextBlock Text="单人游戏按 Esc → 对局域网开放，记下端口。&#10;在「联机房间」输入端口创建房间，把 MCLN1: 邀请码发给朋友。&#10;EasyTier 需要管理员权限创建 TUN；加入者在多人游戏里连接房间页显示的 127.0.0.1 地址。"
                                Style="{StaticResource Muted}" TextWrapping="Wrap" LineHeight="21" Margin="0,8,0,0"/>
                     <TextBlock Text="快捷键" Style="{StaticResource H3}" Margin="0,22,0,0"/>
-                    <TextBlock Text="Enter：在输入对话框中确认&#10;Esc：取消对话框&#10;双击标题栏：最大化/还原&#10;双击实例卡片：直接启动&#10;右上角月亮/太阳：切换浅色与深色主题&#10;Ctrl + Shift + L：快速切换主题"
+                    <TextBlock Text="Enter：在输入对话框中确认&#10;Esc：取消对话框&#10;双击标题栏：最大化/还原&#10;双击游戏卡片：直接启动&#10;右上角月亮/太阳：切换浅色与深色主题&#10;Ctrl + Shift + L：快速切换主题"
                                Style="{StaticResource Muted}" TextWrapping="Wrap" LineHeight="21" Margin="0,8,0,0"/>
                     <TextBlock Text="数据位置" Style="{StaticResource H3}" Margin="0,22,0,0"/>
                     <TextBlock Text="启动器数据：D:\MCLneo\data&#10;游戏目录：可在设置中修改，默认 D:\MCLneo\game&#10;导出文件：D:\MCLneo\exports"
                                Style="{StaticResource Muted}" TextWrapping="Wrap" LineHeight="21" Margin="0,8,0,0"/>
                     <TextBlock Text="排查启动失败" Style="{StaticResource H3}" Margin="0,22,0,0"/>
-                    <TextBlock Text="在实例卡片点「日志」查看游戏日志与 crash-reports；点「修复」检查基础版本、运行库和资源索引。Java 缺失时可在设置中打开 Java 管理器下载。"
+                    <TextBlock Text="在游戏卡片点「日志」查看游戏日志与 crash-reports；点「修复」检查基础版本、运行库和资源索引。Java 缺失时可在设置中打开 Java 管理器下载。"
                                Style="{StaticResource Muted}" TextWrapping="Wrap" LineHeight="21" Margin="0,8,0,0"/>
                 </StackPanel>
             </ScrollViewer>

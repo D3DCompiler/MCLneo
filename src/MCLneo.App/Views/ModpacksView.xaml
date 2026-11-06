@@ -17,7 +17,7 @@
         <Grid Grid.Row="0">
             <StackPanel>
                 <TextBlock Text="整合包" Style="{StaticResource H2}"/>
-                <TextBlock Text="从 Modrinth 安装 .mrpack 整合包。启动器会自动创建独立实例、安装加载器并补齐文件。"
+                <TextBlock Text="从 Modrinth 安装 .mrpack 整合包。启动器会自动创建独立游戏、安装加载器并补齐文件。"
                            Style="{StaticResource Muted}" Margin="1,6,0,0"/>
             </StackPanel>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
@@ -38,8 +38,8 @@
         <Border Grid.Row="2" Style="{StaticResource Card}" Padding="20">
             <Grid>
                 <StackPanel>
-                    <TextBlock Text="整合包会创建新实例" FontSize="13" FontWeight="SemiBold"/>
-                    <TextBlock Text="不会覆盖当前实例。安装前请确认磁盘空间充足；整合包通常包含数百个模组与配置文件。"
+                    <TextBlock Text="整合包会创建新游戏" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
+                    <TextBlock Text="不会覆盖当前游戏。安装前请确认磁盘空间充足；整合包通常包含数百个模组与配置文件。"
                                Style="{StaticResource Muted}" Margin="0,4,0,0" TextWrapping="Wrap"/>
                 </StackPanel>
                 <TextBlock Text=".MRPACK" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}"
@@ -118,7 +118,7 @@
             <Border x:Name="LoadingPanel" Style="{StaticResource Card}" VerticalAlignment="Top" Padding="24"
                     Visibility="Collapsed">
                 <StackPanel>
-                    <TextBlock Text="正在从 Modrinth 获取整合包…" FontSize="14" FontWeight="SemiBold"/>
+                    <TextBlock Text="正在从 Modrinth 获取整合包…" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
                     <ProgressBar IsIndeterminate="True" Height="5" Margin="0,12,0,0"/>
                 </StackPanel>
             </Border>
@@ -126,7 +126,7 @@
                 <Border Width="410" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderStrongBrush}"
                         BorderThickness="1" CornerRadius="16" Padding="24" VerticalAlignment="Center">
                     <StackPanel>
-                        <TextBlock Text="正在安装整合包" FontSize="16" FontWeight="SemiBold"/>
+                        <TextBlock Text="正在安装整合包" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
                         <TextBlock x:Name="BusyStage" Text="" Style="{StaticResource Muted}" Margin="0,6,0,14"
                                    TextWrapping="Wrap"/>
                         <ProgressBar x:Name="BusyProgress" Height="6" Minimum="0" Maximum="1"/>
@@ -138,7 +138,7 @@
 
         <Grid Grid.Row="5" Margin="2,11,0,0">
             <TextBlock Text="数据来源：Modrinth · 目前支持 .mrpack 格式" Style="{StaticResource Caption}"/>
-            <TextBlock Text="整合包安装完成后会自动切换到实例库" Style="{StaticResource Caption}"
+            <TextBlock Text="整合包安装完成后会自动切换到游戏库" Style="{StaticResource Caption}"
                        HorizontalAlignment="Right"/>
         </Grid>
     </Grid>

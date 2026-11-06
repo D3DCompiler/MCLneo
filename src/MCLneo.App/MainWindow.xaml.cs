@@ -314,9 +314,9 @@ public partial class MainWindow : Window
     {
         (PageTitleText.Text, PageSubtitleText.Text) = key switch
         {
-            "instances" => ("实例管理", "每个世界，都有一套自己的配置"),
+            "instances" => ("游戏管理", "每个世界，都有一套自己的配置"),
             "download" => ("下载中心", "安装原版与加载器，所有文件走可信源"),
-            "modpacks" => ("整合包", "一键搭建整合包实例"),
+            "modpacks" => ("整合包", "一键搭建整合包游戏"),
             "mods" => ("模组与资源", "从 Modrinth 发现新的玩法"),
             "saves" => ("存档管理", "备份、迁移，别让冒险消失"),
             "room" => ("联机房间", "把单人世界分享给朋友"),

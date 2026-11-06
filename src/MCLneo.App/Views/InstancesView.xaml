@@ -14,27 +14,27 @@
 
         <Grid Grid.Row="0">
             <StackPanel>
-                <TextBlock Text="实例库" Style="{StaticResource H2}"/>
+                <TextBlock Text="游戏库" Style="{StaticResource H2}"/>
                 <StackPanel Orientation="Horizontal" Margin="1,5,0,0">
-                    <TextBlock Text="{Binding Instances.Count, StringFormat='共 {0} 个实例'}" Style="{StaticResource Muted}"/>
-                    <TextBlock Text="  ·  每个实例拥有独立的模组、存档与配置" Style="{StaticResource Muted}"/>
+                    <TextBlock Text="{Binding Instances.Count, StringFormat='共 {0} 个游戏'}" Style="{StaticResource Muted}"/>
+                    <TextBlock Text="  ·  每个游戏拥有独立的模组、存档与配置" Style="{StaticResource Muted}"/>
                 </StackPanel>
             </StackPanel>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                 <Grid Width="190">
                     <TextBox x:Name="SearchBox" Height="36" Padding="11,7" FontSize="12"
-                             TextChanged="SearchBox_TextChanged" ToolTip="按名称或版本搜索实例"/>
-                    <TextBlock Text="搜索实例…" Style="{StaticResource Caption}" Margin="12,0,0,0"
+                             TextChanged="SearchBox_TextChanged" ToolTip="按名称或版本搜索游戏"/>
+                    <TextBlock Text="搜索游戏…" Style="{StaticResource Caption}" Margin="12,0,0,0"
                                VerticalAlignment="Center" IsHitTestVisible="False"
                                Visibility="{Binding Text, ElementName=SearchBox, Converter={StaticResource EmptyStringToVisibility}}"/>
                 </Grid>
                 <Button Content="刷新" Style="{StaticResource SecondaryButton}" Width="54" Height="36"
-                        Margin="8,0,0,0" FontSize="11" Padding="0" ToolTip="刷新实例列表" Click="Refresh_Click"/>
-                <Button Content="导入实例" Style="{StaticResource SecondaryButton}" Padding="13,8"
+                        Margin="8,0,0,0" FontSize="11" Padding="0" ToolTip="刷新游戏列表" Click="Refresh_Click"/>
+                <Button Content="导入游戏" Style="{StaticResource SecondaryButton}" Padding="13,8"
                         Margin="8,0,0,0" FontSize="12" Click="Import_Click"/>
                 <Button Content="导入已有版本" Style="{StaticResource SecondaryButton}" Padding="13,8"
                         Margin="8,0,0,0" FontSize="12" Click="ImportExternal_Click"/>
-                <Button Content="+  新建实例" Style="{StaticResource PrimaryButton}" Padding="15,8"
+                <Button Content="+  新建游戏" Style="{StaticResource PrimaryButton}" Padding="15,8"
                         Margin="8,0,0,0" FontSize="12" Click="Create_Click"/>
             </StackPanel>
         </Grid>
@@ -132,12 +132,12 @@
                                    Foreground="{DynamicResource FaintBrush}" HorizontalAlignment="Center"
                                    VerticalAlignment="Center"/>
                     </Border>
-                    <TextBlock Text="实例库还是空的" FontSize="18" FontWeight="SemiBold" HorizontalAlignment="Center"
+                    <TextBlock Text="游戏库还是空的" FontSize="18" FontWeight="SemiBold" HorizontalAlignment="Center"
                                Foreground="{DynamicResource TextBrush}" Margin="0,16,0,0"/>
-                    <TextBlock Text="安装一个原版或 Fabric 实例，MCLneo 会为它准备独立的模组、存档与配置目录。"
+                    <TextBlock Text="安装一个原版或 Fabric 游戏，MCLneo 会为它准备独立的模组、存档与配置目录。"
                                Style="{StaticResource Muted}" HorizontalAlignment="Center" MaxWidth="440"
                                TextAlignment="Center" TextWrapping="Wrap" Margin="0,7,0,0"/>
-                    <Button Content="创建第一个实例" Style="{StaticResource PrimaryButton}" Width="160" Height="42"
+                    <Button Content="创建第一个游戏" Style="{StaticResource PrimaryButton}" Width="160" Height="42"
                             Margin="0,20,0,0" Click="Create_Click"/>
                 </StackPanel>
             </Border>
@@ -146,7 +146,7 @@
         <Grid Grid.Row="3" Margin="1,13,0,0">
             <TextBlock Text="提示：把游戏目录指向已有的 .minecraft，MCLneo 会自动识别其中的版本。"
                        Style="{StaticResource Caption}"/>
-            <TextBlock Text="双击实例卡片也可以直接启动" Style="{StaticResource Caption}" HorizontalAlignment="Right"/>
+            <TextBlock Text="双击游戏卡片也可以直接启动" Style="{StaticResource Caption}" HorizontalAlignment="Right"/>
         </Grid>
 
         <Grid Grid.RowSpan="4" x:Name="BusyOverlay" Visibility="Collapsed" Background="{DynamicResource OverlayBrush}">

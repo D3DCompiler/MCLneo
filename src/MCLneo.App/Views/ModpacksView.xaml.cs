@@ -50,7 +50,7 @@ public partial class ModpacksView : UserControl
         if (dialog.ShowDialog(Window.GetWindow(this)) != true) return;
         var defaultName = Path.GetFileNameWithoutExtension(dialog.FileName);
         var name = InputDialog.Show(Window.GetWindow(this), "安装本地整合包",
-            "为新实例取一个名字。", defaultName);
+            "为新游戏取一个名字。", defaultName);
         if (string.IsNullOrWhiteSpace(name)) return;
 
         _busy = true;
@@ -143,7 +143,7 @@ public partial class ModpacksView : UserControl
         }
 
         var name = InputDialog.Show(Window.GetWindow(this), "安装整合包",
-            $"为「{project.Title}」创建独立实例。\n整合包会安装自己的加载器、模组和配置。",
+            $"为「{project.Title}」创建独立游戏。\n整合包会安装自己的加载器、模组和配置。",
             project.Title);
         if (string.IsNullOrWhiteSpace(name)) return;
 

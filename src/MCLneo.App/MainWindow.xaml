@@ -58,10 +58,10 @@
                             </StackPanel>
                         </RadioButton>
                         <RadioButton x:Name="NavInstances" Style="{StaticResource RailNavButton}" Tag="instances"
-                                     Checked="Nav_Checked" ToolTip="实例管理">
+                                     Checked="Nav_Checked" ToolTip="游戏管理">
                             <StackPanel>
                                 <TextBlock Text="&#xE8B7;" Style="{StaticResource IconGlyph}" FontSize="17"/>
-                                <TextBlock Text="实例" FontSize="8.5" Margin="0,3,0,0"/>
+                                <TextBlock Text="游戏" FontSize="8.5" Margin="0,3,0,0"/>
                             </StackPanel>
                         </RadioButton>
                         <RadioButton x:Name="NavDownload" Style="{StaticResource RailNavButton}" Tag="download"

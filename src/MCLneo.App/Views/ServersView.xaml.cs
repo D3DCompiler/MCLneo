@@ -46,7 +46,7 @@ public partial class ServersView : UserControl
             NoInstancePanel.Visibility = Visibility.Visible;
             ServerList.Visibility = Visibility.Collapsed;
             EmptyPanel.Visibility = Visibility.Collapsed;
-            HintText.Text = "未选择实例";
+            HintText.Text = "未选择游戏";
             return;
         }
 
@@ -83,7 +83,7 @@ public partial class ServersView : UserControl
         var instance = _state.SelectedInstance;
         if (instance is null)
         {
-            _state.Notify("请先选择一个实例", true);
+            _state.Notify("请先选择一个游戏", true);
             return;
         }
 

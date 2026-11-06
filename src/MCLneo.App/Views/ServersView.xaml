@@ -14,18 +14,18 @@
         <Grid Grid.Row="0">
             <StackPanel>
                 <TextBlock Text="服务器" Style="{StaticResource H2}"/>
-                <TextBlock Text="管理实例的 servers.dat，并直接启动游戏连接服务器。"
+                <TextBlock Text="管理游戏的 servers.dat，并直接启动游戏连接服务器。"
                            Style="{StaticResource Muted}" Margin="1,6,0,0"/>
             </StackPanel>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                <TextBlock Text="目标实例" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,9,0"/>
+                <TextBlock Text="目标游戏" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,9,0"/>
                 <ComboBox x:Name="InstanceBox" Width="230" Height="38" ItemsSource="{Binding Instances}"
                           SelectedItem="{Binding SelectedInstance, Mode=TwoWay}"
                           SelectionChanged="InstanceBox_SelectionChanged">
                     <ComboBox.ItemTemplate>
                         <DataTemplate>
                             <StackPanel>
-                                <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="SemiBold"/>
+                                <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
                                 <TextBlock Text="{Binding Subtitle}" FontSize="9" Foreground="{DynamicResource MutedBrush}"/>
                             </StackPanel>
                         </DataTemplate>
@@ -96,9 +96,9 @@
             <Border x:Name="NoInstancePanel" Style="{StaticResource Card}" Padding="30" VerticalAlignment="Top"
                     Visibility="Collapsed">
                 <StackPanel HorizontalAlignment="Center" Margin="0,50">
-                    <TextBlock Text="先选择一个实例" FontSize="18" FontWeight="SemiBold" HorizontalAlignment="Center"
+                    <TextBlock Text="先选择一个游戏" FontSize="18" FontWeight="SemiBold" HorizontalAlignment="Center"
                                Foreground="{DynamicResource TextBrush}"/>
-                    <TextBlock Text="服务器列表保存在实例的 servers.dat 中。"
+                    <TextBlock Text="服务器列表保存在游戏的 servers.dat 中。"
                                Style="{StaticResource Muted}" HorizontalAlignment="Center" Margin="0,7,0,0"/>
                 </StackPanel>
             </Border>

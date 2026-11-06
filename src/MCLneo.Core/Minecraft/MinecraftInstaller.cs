@@ -66,7 +66,7 @@ public sealed class MinecraftInstaller
         string? loaderVersion = null;
         if (request.Loader == LoaderKind.Vanilla)
         {
-            Report(progress, "写入实例配置", 0.74, "正在建立独立游戏目录");
+            Report(progress, "写入游戏配置", 0.74, "正在建立独立游戏目录");
             // Keep the instance profile minimal. Copying the whole base document would
             // duplicate libraries/arguments when VersionResolver merges the parent.
             profile = new JsonObject
@@ -102,7 +102,7 @@ public sealed class MinecraftInstaller
         await SaveMetadataAsync(instance, ct).ConfigureAwait(false);
 
         Report(progress, "安装完成", 1, $"{instance.Name} 已准备好");
-        _log.Info($"实例安装完成：{instance.Name}（{instance.Id}，{instance.Subtitle}）");
+        _log.Info($"游戏安装完成：{instance.Name}（{instance.Id}，{instance.Subtitle}）");
         return instance;
     }
 
@@ -253,7 +253,7 @@ public sealed class MinecraftInstaller
         }
 
         Report(progress, "修复完成", 1, instance.Name);
-        _log.Info($"实例修复完成：{instance.Name}");
+        _log.Info($"游戏修复完成：{instance.Name}");
     }
 
     public async Task<string> GetLatestLoaderVersionAsync(

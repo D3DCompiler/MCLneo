@@ -201,7 +201,7 @@ public sealed class LaunchService
             if (!File.Exists(path))
             {
                 throw new FileNotFoundException(
-                    $"运行库缺失：{library.Name}。请重新安装该实例。", path);
+                    $"运行库缺失：{library.Name}。请重新安装该游戏。", path);
             }
 
             classpath.Add(path);
@@ -259,7 +259,7 @@ public sealed class LaunchService
         var logPath = Path.Combine(instance.LogsDirectory, logName);
         Directory.CreateDirectory(Path.GetDirectoryName(logPath)!);
 
-        _log.Info($"启动实例：{instance.Name}；Java：{java.ExecutablePath}；资源索引：{assetsIndex}；日志配置：{loggingId ?? "默认"}");
+        _log.Info($"启动游戏：{instance.Name}；Java：{java.ExecutablePath}；资源索引：{assetsIndex}；日志配置：{loggingId ?? "默认"}");
         Report(progress, "准备完成", "即将进入游戏", 0.4);
         return new LaunchPlan(instance, java, allArguments, instance.Directory, logPath, placeholders);
     }
@@ -290,7 +290,7 @@ public sealed class LaunchService
 
         var writer = new StreamWriter(plan.LogPath, false, new UTF8Encoding(false)) { AutoFlush = true };
         await writer.WriteLineAsync($"=== MCLneo 启动 {DateTimeOffset.Now:O} ===").ConfigureAwait(false);
-        await writer.WriteLineAsync($"实例：{instance.Name}（{instance.Id}）").ConfigureAwait(false);
+        await writer.WriteLineAsync($"游戏：{instance.Name}（{instance.Id}）").ConfigureAwait(false);
         await writer.WriteLineAsync($"Java：{plan.Java.ExecutablePath}").ConfigureAwait(false);
         var token = options.Player.AccessToken;
         var safeArgs = plan.Arguments.Select(a => a == token ? "***" : a);

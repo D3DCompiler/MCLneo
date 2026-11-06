@@ -89,7 +89,7 @@ public sealed class ModpackService
         var mcVersion = dependencies["minecraft"]?.GetValue<string>()
                         ?? throw new InvalidDataException("整合包未指定 Minecraft 版本");
         var loader = ReadLoader(dependencies, out var loaderVersion);
-        progress?.Report(new InstallProgress("准备整合包实例", 0.1, $"Minecraft {mcVersion} · {loader}"));
+        progress?.Report(new InstallProgress("准备整合包游戏", 0.1, $"Minecraft {mcVersion} · {loader}"));
 
         var manifest = await _catalog.GetManifestAsync(_settings.Current.DownloadSource, ct: ct)
             .ConfigureAwait(false);
