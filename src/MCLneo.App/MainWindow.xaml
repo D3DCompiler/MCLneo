@@ -279,7 +279,7 @@
                                     </StackPanel>
                                 </StackPanel>
 
-                                <ProgressBar Value="{Binding LaunchFraction, Mode=OneWay}" Height="6"/>
+                                <ProgressBar x:Name="LaunchProgressBar" Minimum="0" Maximum="1" Height="6"/>
                                 <Grid Margin="0,7,0,0">
                                     <TextBlock Text="{Binding LaunchFraction, Converter={StaticResource Percent}}"
                                                Style="{StaticResource Caption}"/>

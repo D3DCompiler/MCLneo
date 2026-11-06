@@ -106,6 +106,17 @@ public partial class MainWindow : Window
 
     private void State_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
+        if (e.PropertyName == nameof(AppState.LaunchFraction) && LaunchProgressBar is not null)
+        {
+            var target = Math.Clamp(_state.LaunchFraction, 0, 1);
+            LaunchProgressBar.BeginAnimation(ProgressBar.ValueProperty,
+                new DoubleAnimation(target, TimeSpan.FromMilliseconds(240))
+                {
+                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut },
+                    FillBehavior = FillBehavior.HoldEnd
+                });
+        }
+
         if (e.PropertyName is nameof(AppState.IsGameRunning) or nameof(AppState.HasActiveGame))
         {
             UpdateGameRunningChip();
