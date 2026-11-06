@@ -7,6 +7,7 @@ using MCLneo.Core;
 using MCLneo.Core.Infrastructure;
 using MCLneo.Core.Minecraft;
 using MCLneo.Core.Models;
+using MCLneo.Core.Mods;
 
 namespace MCLneo.App.Views;
 
@@ -21,6 +22,7 @@ public partial class CreateInstanceDialog : Window
     private bool _installing;
     private bool _closeRequested;
     private readonly List<string> _selectedMods = new();
+    private readonly List<ModrinthProject> _selectedProjects = new();
     private CancellationTokenSource? _cts;
 
     public CreateInstanceDialog(AppServices services, AppState state, string? preselectedVersion = null)
@@ -120,6 +122,12 @@ public partial class CreateInstanceDialog : Window
         {
             NameBox.Text = $"Minecraft {version.Id}";
         }
+
+        if (!_installing)
+        {
+            _selectedProjects.Clear();
+            UpdateModsSummary();
+        }
     }
 
     private void NameBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
@@ -174,6 +182,9 @@ public partial class CreateInstanceDialog : Window
         {
             LoaderVersionBox.Text = "";
         }
+
+        _selectedProjects.Clear();
+        UpdateModsSummary();
     }
 
     private void AddMods_Click(object sender, RoutedEventArgs e)
@@ -194,7 +205,44 @@ public partial class CreateInstanceDialog : Window
             }
         }
 
-        ModsSummary.Text = _selectedMods.Count == 0 ? "未选择" : $"已选择 {_selectedMods.Count} 个文件";
+        UpdateModsSummary();
+    }
+
+    private void AddModrinthMods_Click(object sender, RoutedEventArgs e)
+    {
+        var version = VersionBox.SelectedItem as MinecraftVersionInfo;
+        if (version is null)
+        {
+            ShowError("请先选择一个 Minecraft 版本");
+            return;
+        }
+
+        if (SelectedLoader == LoaderKind.Vanilla)
+        {
+            ShowError("原版游戏不能加载模组，请先选择 Fabric、Quilt、Forge 或 NeoForge");
+            return;
+        }
+
+        var picker = new ModrinthPickerWindow(_services, version.Id, SelectedLoader) { Owner = this };
+        if (picker.ShowDialog() != true) return;
+        foreach (var project in picker.SelectedProjects)
+        {
+            if (_selectedProjects.All(p => p.ProjectId != project.ProjectId))
+            {
+                _selectedProjects.Add(project);
+            }
+        }
+
+        UpdateModsSummary();
+    }
+
+    private void UpdateModsSummary()
+    {
+        if (ModsSummary is null) return;
+        var parts = new List<string>();
+        if (_selectedMods.Count > 0) parts.Add($"本地 {_selectedMods.Count}");
+        if (_selectedProjects.Count > 0) parts.Add($"在线 {_selectedProjects.Count}");
+        ModsSummary.Text = parts.Count == 0 ? "未选择" : string.Join(" · ", parts);
     }
 
     private LoaderKind SelectedLoader => LoaderFabric.IsChecked == true
@@ -287,9 +335,38 @@ public partial class CreateInstanceDialog : Window
                 }
             }
 
-            _state.Notify(copiedMods > 0
-                ? $"游戏「{Result.Name}」安装完成，已添加 {copiedMods} 个模组"
-                : $"游戏「{Result.Name}」安装完成", false);
+            var onlineInstalled = 0;
+            var failedOnline = new List<string>();
+            if (selectedLoader != LoaderKind.Vanilla && _selectedProjects.Count > 0)
+            {
+                ProgressStage.Text = "安装模组";
+                var status = new Progress<string>(text => ProgressDetail.Text = text);
+                foreach (var project in _selectedProjects)
+                {
+                    try
+                    {
+                        ProgressDetail.Text = $"正在安装 {project.Title}…";
+                        await _services.Modrinth.InstallAsync(project, Result, "mod", status);
+                        onlineInstalled++;
+                    }
+                    catch (Exception ex)
+                    {
+                        _services.Log.Error($"安装创建时选择的模组失败：{project.Title}", ex);
+                        failedOnline.Add(project.Title);
+                    }
+                }
+            }
+
+            var totalMods = copiedMods + onlineInstalled;
+            var message = totalMods > 0
+                ? $"游戏「{Result.Name}」安装完成，已添加 {totalMods} 个模组"
+                : $"游戏「{Result.Name}」安装完成";
+            if (failedOnline.Count > 0)
+            {
+                message += $"；{failedOnline.Count} 个模组安装失败，可在模组页重试";
+            }
+
+            _state.Notify(message, failedOnline.Count > 0);
             DialogResult = true;
             Close();
         }

@@ -129,10 +129,14 @@
                             <TextBlock x:Name="ModsSummary" Text="未选择" Style="{StaticResource Caption}"
                                        HorizontalAlignment="Right"/>
                         </Grid>
-                        <Button x:Name="AddModsButton" Content="添加本地模组…"
-                                Style="{StaticResource SecondaryButton}" HorizontalAlignment="Left"
-                                Padding="14,8" Margin="0,7,0,0" Click="AddMods_Click"/>
-                        <TextBlock Text="创建完成后会自动复制到游戏的 mods 目录。"
+                        <StackPanel Orientation="Horizontal" Margin="0,7,0,0">
+                            <Button x:Name="AddModsButton" Content="添加本地模组…"
+                                    Style="{StaticResource SecondaryButton}"
+                                    Padding="14,8" Click="AddMods_Click"/>
+                            <Button Content="从 Modrinth 添加…" Style="{StaticResource SecondaryButton}"
+                                    Padding="14,8" Margin="7,0,0,0" Click="AddModrinthMods_Click"/>
+                        </StackPanel>
+                        <TextBlock Text="创建完成后会自动安装所选模组。"
                                    Style="{StaticResource Caption}" Margin="2,6,0,0"/>
                     </StackPanel>
 
