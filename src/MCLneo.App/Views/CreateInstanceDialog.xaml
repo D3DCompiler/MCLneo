@@ -1,0 +1,171 @@
+<Window x:Class="MCLneo.App.Views.CreateInstanceDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="创建实例" Width="690" SizeToContent="Height" MaxHeight="820" WindowStyle="None"
+        ResizeMode="NoResize" WindowStartupLocation="CenterOwner" Background="{DynamicResource BgBrush}"
+        ShowInTaskbar="False" Loaded="Window_Loaded" Closing="Window_Closing">
+    <Border Background="{DynamicResource BgBrush}" BorderBrush="{DynamicResource BorderStrongBrush}" BorderThickness="1" CornerRadius="18">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="54"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <Border Grid.Row="0" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1"
+                    Background="{DynamicResource TitleBarBrush}" CornerRadius="18,18,0,0" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                <Grid Margin="24,0,12,0">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="新建实例" FontSize="14" FontWeight="SemiBold"/>
+                        <Border Style="{StaticResource AccentTagBorder}" Margin="10,0,0,0" Padding="8,2">
+                            <TextBlock Text="安装器" FontSize="8" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}"/>
+                        </Border>
+                    </StackPanel>
+                    <Button Style="{StaticResource CaptionButton}" Content="&#xE8BB;" HorizontalAlignment="Right"
+                            Click="Close_Click"/>
+                </Grid>
+            </Border>
+
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" MaxHeight="620">
+                <StackPanel x:Name="FormPanel" Margin="28,22,28,8">
+                    <TextBlock Text="从零开始，创建一个独立的游戏空间" FontSize="21" FontWeight="Bold"
+                               Foreground="{DynamicResource TextBrush}"/>
+                    <TextBlock Text="MCLneo 会把游戏文件放在共享库中，而把模组、存档和配置放进这个实例自己的目录。"
+                               Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,6,0,20"/>
+
+                    <TextBlock Text="实例名称" Style="{StaticResource SectionLabel}" Margin="1,0,0,7"/>
+                    <TextBox x:Name="NameBox" Height="42" FontSize="14" Foreground="{DynamicResource TextBrush}"
+                             TextChanged="NameBox_TextChanged"/>
+                    <TextBlock x:Name="PathPreview" Style="{StaticResource Caption}" Margin="2,6,0,0"
+                               TextTrimming="CharacterEllipsis"/>
+
+                    <Grid Margin="0,20,0,0">
+                        <TextBlock Text="Minecraft 版本" Style="{StaticResource SectionLabel}" VerticalAlignment="Center"/>
+                        <CheckBox x:Name="SnapshotCheck" Content="显示快照版本" HorizontalAlignment="Right"
+                                  Checked="Snapshot_Changed" Unchecked="Snapshot_Changed"/>
+                    </Grid>
+                    <Grid Margin="0,7,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <ComboBox x:Name="VersionBox" Height="42" SelectionChanged="VersionBox_SelectionChanged">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid MinWidth="400">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding Id}" FontWeight="SemiBold" FontSize="12.5"/>
+                                            <Border Style="{StaticResource TagBorder}" Padding="7,1" Margin="8,0,0,0">
+                                                <TextBlock Text="{Binding Type}" FontSize="9" Foreground="{DynamicResource MutedBrush}"/>
+                                            </Border>
+                                            <Border Style="{StaticResource AccentTagBorder}" Padding="7,1" Margin="5,0,0,0"
+                                                    Visibility="{Binding IsLatestRelease, Converter={StaticResource BoolToVisibility}}">
+                                                <TextBlock Text="最新" FontSize="8" FontWeight="Bold"
+                                                           Foreground="{DynamicResource AccentBrush}"/>
+                                            </Border>
+                                        </StackPanel>
+                                        <TextBlock Text="{Binding ReleaseTime, StringFormat='{}{0:yyyy-MM-dd}'}"
+                                                   FontSize="10" Foreground="{DynamicResource FaintBrush}"
+                                                   HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                        <Button Grid.Column="1" Content="刷新" Style="{StaticResource SecondaryButton}" Width="58"
+                                Height="42" Margin="8,0,0,0" FontSize="11" Padding="0" ToolTip="重新获取版本清单"
+                                Click="ReloadVersions_Click"/>
+                    </Grid>
+                    <TextBlock x:Name="VersionHint" Text="正在读取版本清单…" Style="{StaticResource Caption}"
+                               Margin="2,6,0,0"/>
+
+                    <TextBlock Text="加载器" Style="{StaticResource SectionLabel}" Margin="1,20,0,8"/>
+                    <UniformGrid Columns="3">
+                        <RadioButton x:Name="LoaderVanilla" GroupName="Loader" Style="{StaticResource OptionCard}"
+                                     Margin="0,0,7,0" Checked="Loader_Changed">
+                            <StackPanel>
+                                <TextBlock Text="原版" FontSize="13.5" FontWeight="SemiBold"/>
+                                <TextBlock Text="纯净 Minecraft" Style="{StaticResource Caption}" Margin="0,3,0,0"/>
+                            </StackPanel>
+                        </RadioButton>
+                        <RadioButton x:Name="LoaderFabric" GroupName="Loader" Style="{StaticResource OptionCard}"
+                                     Margin="3,0" Checked="Loader_Changed">
+                            <StackPanel>
+                                <TextBlock Text="Fabric" FontSize="13.5" FontWeight="SemiBold"/>
+                                <TextBlock Text="轻量 · 模组生态" Style="{StaticResource Caption}" Margin="0,3,0,0"/>
+                            </StackPanel>
+                        </RadioButton>
+                        <RadioButton x:Name="LoaderQuilt" GroupName="Loader" Style="{StaticResource OptionCard}"
+                                     Margin="7,0,0,0" Checked="Loader_Changed">
+                            <StackPanel>
+                                <TextBlock Text="Quilt" FontSize="13.5" FontWeight="SemiBold"/>
+                                <TextBlock Text="Fabric 的衍生加载器" Style="{StaticResource Caption}" Margin="0,3,0,0"/>
+                            </StackPanel>
+                        </RadioButton>
+                    </UniformGrid>
+                    <UniformGrid Columns="2" Margin="0,7,0,0">
+                        <RadioButton x:Name="LoaderForge" GroupName="Loader" Style="{StaticResource OptionCard}"
+                                     Margin="0,0,4,0" Checked="Loader_Changed">
+                            <StackPanel>
+                                <TextBlock Text="Forge" FontSize="13.5" FontWeight="SemiBold"/>
+                                <TextBlock Text="大型模组 / 整合包" Style="{StaticResource Caption}" Margin="0,3,0,0"/>
+                            </StackPanel>
+                        </RadioButton>
+                        <RadioButton x:Name="LoaderNeoForge" GroupName="Loader" Style="{StaticResource OptionCard}"
+                                     Margin="4,0,0,0" Checked="Loader_Changed">
+                            <StackPanel>
+                                <TextBlock Text="NeoForge" FontSize="13.5" FontWeight="SemiBold"/>
+                                <TextBlock Text="Forge 社区分支" Style="{StaticResource Caption}" Margin="0,3,0,0"/>
+                            </StackPanel>
+                        </RadioButton>
+                    </UniformGrid>
+                    <TextBlock Text="Forge / NeoForge 使用官方 installer 安装，会自动下载对应运行库。"
+                               Style="{StaticResource Caption}" Foreground="{DynamicResource WarningBrush}"
+                               Margin="2,8,0,0"/>
+
+                    <TextBlock x:Name="LoaderVersionLabel" Text="加载器版本（可选）" Style="{StaticResource SectionLabel}"
+                               Margin="1,18,0,7"/>
+                    <TextBox x:Name="LoaderVersionBox" Height="40" IsEnabled="False"
+                             Foreground="{DynamicResource TextBrush}"/>
+                    <TextBlock Text="留空会使用该 Minecraft 版本对应的最新稳定加载器。"
+                               Style="{StaticResource Caption}" Margin="2,6,0,0"/>
+
+                    <Border x:Name="ErrorPanel" Visibility="Collapsed" Background="{DynamicResource DangerSoftBrush}" BorderBrush="{DynamicResource DangerBorderBrush}"
+                            BorderThickness="1" CornerRadius="10" Padding="12" Margin="0,18,0,0">
+                        <TextBlock x:Name="ErrorText" Text="" Foreground="{DynamicResource DangerBrush}" FontSize="11.5"
+                                   TextWrapping="Wrap"/>
+                    </Border>
+
+                    <Border x:Name="ProgressPanel" Visibility="Collapsed" Background="{DynamicResource SurfaceBrush}"
+                            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="12"
+                            Padding="16" Margin="0,20,0,0">
+                        <StackPanel>
+                            <Grid>
+                                <TextBlock x:Name="ProgressStage" Text="准备安装" FontSize="13" FontWeight="SemiBold"/>
+                                <TextBlock x:Name="ProgressPercent" Text="0%" Style="{StaticResource Caption}"
+                                           HorizontalAlignment="Right"/>
+                            </Grid>
+                            <ProgressBar x:Name="InstallProgressBar" Height="7" Margin="0,11,0,0"/>
+                            <TextBlock x:Name="ProgressDetail" Text="" Style="{StaticResource Muted}" FontSize="11"
+                                       TextTrimming="CharacterEllipsis" Margin="0,8,0,0"/>
+                            <TextBlock x:Name="ProgressCount" Text="" Style="{StaticResource Caption}" Margin="0,3,0,0"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+
+            <Border Grid.Row="2" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0"
+                    Background="{DynamicResource TitleBarBrush}" CornerRadius="0,0,18,18" Padding="24,16">
+                <Grid>
+                    <TextBlock x:Name="SourceText" Text="下载源：BMCLAPI" Style="{StaticResource Caption}"
+                               VerticalAlignment="Center"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button x:Name="CancelButton" Content="取消" Style="{StaticResource SecondaryButton}"
+                                Padding="17,9" MinWidth="84" Click="Close_Click" Margin="0,0,8,0"/>
+                        <Button x:Name="InstallButton" Content="开始安装" Style="{StaticResource PrimaryButton}"
+                                Padding="20,9" MinWidth="120" Click="Install_Click"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

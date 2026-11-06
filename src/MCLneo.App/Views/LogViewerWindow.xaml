@@ -1,0 +1,79 @@
+<Window x:Class="MCLneo.App.Views.LogViewerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="日志与崩溃报告" Width="1040" Height="720" WindowStyle="None" ResizeMode="CanResize"
+        WindowStartupLocation="CenterOwner" Background="{DynamicResource BgBrush}" ShowInTaskbar="False"
+        Loaded="Window_Loaded">
+    <Border Background="{DynamicResource BgBrush}" BorderBrush="{DynamicResource BorderStrongBrush}" BorderThickness="1" CornerRadius="16">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="52"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1"
+                    Background="{DynamicResource TitleBarBrush}" CornerRadius="16,16,0,0" Padding="22,0,10,0">
+                <Grid>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="日志与崩溃报告" FontSize="14" FontWeight="SemiBold"/>
+                        <TextBlock x:Name="InstanceName" Text="" Style="{StaticResource Caption}" Margin="10,2,0,0"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Content="刷新" Style="{StaticResource SecondaryButton}" Padding="12,6"
+                                FontSize="11" Click="Refresh_Click" Margin="0,0,7,0"/>
+                        <Button Content="打开目录" Style="{StaticResource GhostButton}" Padding="10,6"
+                                FontSize="11" Click="OpenFolder_Click" Margin="0,0,7,0"/>
+                        <Button Style="{StaticResource CaptionButton}" Content="&#xE8BB;" Click="Close_Click"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+            <Grid Grid.Row="1" Margin="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="245"/>
+                    <ColumnDefinition Width="12"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <ListBox x:Name="FileList" SelectionChanged="FileList_SelectionChanged">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Border Padding="10,8" Margin="0,0,0,4" CornerRadius="8" Background="{DynamicResource InsetBrush}">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding Name}" FontSize="11.5" FontWeight="SemiBold"
+                                               TextTrimming="CharacterEllipsis"/>
+                                    <StackPanel Orientation="Horizontal" Margin="0,3,0,0">
+                                        <TextBlock Text="{Binding Modified, StringFormat='{}{0:MM-dd HH:mm}'}"
+                                                   Style="{StaticResource Caption}"/>
+                                        <TextBlock Text=" · " Style="{StaticResource Caption}"/>
+                                        <TextBlock Text="{Binding Size}" Style="{StaticResource Caption}"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+                <Grid Grid.Column="2">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Border x:Name="AnalysisPanel" Background="{DynamicResource SuccessSoftBrush}" BorderBrush="{DynamicResource AccentBorderBrush}" BorderThickness="1"
+                            CornerRadius="12" Padding="14,10" Margin="0,0,0,8" Visibility="Collapsed">
+                        <StackPanel>
+                            <TextBlock Text="自动分析" FontSize="11" FontWeight="Bold"
+                                       Foreground="{DynamicResource AccentBrush}" Margin="0,0,0,5"/>
+                            <TextBlock x:Name="AnalysisText" Text="" Style="{StaticResource Muted}" FontSize="11"
+                                       TextWrapping="Wrap" MaxHeight="115"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Row="1" Background="{DynamicResource BgBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                            BorderThickness="1" CornerRadius="12">
+                        <TextBox x:Name="ContentView" IsReadOnly="True" AcceptsReturn="True" TextWrapping="NoWrap"
+                                 VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
+                                 FontFamily="{StaticResource MonoFont}" FontSize="11" Padding="12"
+                                 Background="Transparent" BorderThickness="0"/>
+                    </Border>
+                </Grid>
+            </Grid>
+        </Grid>
+    </Border>
+</Window>

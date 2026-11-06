@@ -1,0 +1,145 @@
+<UserControl x:Class="MCLneo.App.Views.ModpacksView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="740">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="14"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="14"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0">
+            <StackPanel>
+                <TextBlock Text="整合包" Style="{StaticResource H2}"/>
+                <TextBlock Text="从 Modrinth 安装 .mrpack 整合包。启动器会自动创建独立实例、安装加载器并补齐文件。"
+                           Style="{StaticResource Muted}" Margin="1,6,0,0"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                <Button Content="从文件安装" Style="{StaticResource SecondaryButton}" Height="38" Padding="13,0"
+                        FontSize="11" Click="InstallFile_Click" Margin="0,0,8,0"/>
+                <Grid Width="260">
+                    <TextBox x:Name="SearchBox" Height="38" Padding="11,7" FontSize="12"
+                             KeyDown="SearchBox_KeyDown"/>
+                    <TextBlock Text="搜索整合包…" Style="{StaticResource Caption}" Margin="12,0,0,0"
+                               VerticalAlignment="Center" IsHitTestVisible="False"
+                               Visibility="{Binding Text, ElementName=SearchBox, Converter={StaticResource EmptyStringToVisibility}}"/>
+                </Grid>
+                <Button Content="搜索" Style="{StaticResource PrimaryButton}" Height="38" Padding="17,0"
+                        Margin="8,0,0,0" Click="Search_Click"/>
+            </StackPanel>
+        </Grid>
+
+        <Border Grid.Row="2" Style="{StaticResource Card}" Padding="20">
+            <Grid>
+                <StackPanel>
+                    <TextBlock Text="整合包会创建新实例" FontSize="13" FontWeight="SemiBold"/>
+                    <TextBlock Text="不会覆盖当前实例。安装前请确认磁盘空间充足；整合包通常包含数百个模组与配置文件。"
+                               Style="{StaticResource Muted}" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                </StackPanel>
+                <TextBlock Text=".MRPACK" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}"
+                           HorizontalAlignment="Right" VerticalAlignment="Center" Opacity="0.7"/>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="4">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <ItemsControl x:Name="ProjectList">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Style="{StaticResource CardHover}" Width="306" Height="200" Margin="0,0,12,12"
+                                        Padding="16">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="40"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Border Width="36" Height="36" CornerRadius="10" Background="{DynamicResource AccentSoftBrush}">
+                                                <TextBlock Text="{Binding Title, Converter={StaticResource Initial}}"
+                                                           FontSize="15" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}"
+                                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                                                <TextBlock Text="{Binding Title}" FontSize="13.5" FontWeight="SemiBold"
+                                                           TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Text="{Binding Author, StringFormat='by {0}'}" Style="{StaticResource Caption}"
+                                                           Margin="0,2,0,0"/>
+                                            </StackPanel>
+                                        </Grid>
+                                        <TextBlock Grid.Row="1" Text="{Binding Description}" Style="{StaticResource Muted}"
+                                                   TextWrapping="Wrap" MaxHeight="66" Margin="0,10,0,0"
+                                                   TextTrimming="CharacterEllipsis"/>
+                                        <Grid Grid.Row="2" Margin="0,8,0,0">
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <TextBlock Text="&#xE896;" FontFamily="{StaticResource IconFont}" FontSize="10"
+                                                           Foreground="{DynamicResource FaintBrush}" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{Binding DownloadText}" Style="{StaticResource Caption}"
+                                                           Margin="4,0,0,0" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                            <Button Content="安装" Style="{StaticResource SmallPrimaryButton}" Width="62"
+                                                    Height="28" Padding="0" HorizontalAlignment="Right"
+                                                    Tag="{Binding}" Click="Install_Click"/>
+                                        </Grid>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <Grid Margin="0,4,12,20">
+                        <TextBlock x:Name="ResultStatus" Text="" Style="{StaticResource Caption}"/>
+                        <Button x:Name="LoadMoreButton" Content="加载更多" Style="{StaticResource SecondaryButton}"
+                                HorizontalAlignment="Center" Padding="18,7" Visibility="Collapsed"
+                                Click="LoadMore_Click"/>
+                    </Grid>
+                    <Border x:Name="EmptyPanel" Style="{StaticResource Card}" Padding="30" Margin="0,0,12,12"
+                            Visibility="Collapsed">
+                        <TextBlock x:Name="EmptyText" Text="没有找到整合包，换个关键词试试。" Style="{StaticResource Muted}"
+                                   HorizontalAlignment="Center" Margin="0,30"/>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+            <Border x:Name="LoadingPanel" Style="{StaticResource Card}" VerticalAlignment="Top" Padding="24"
+                    Visibility="Collapsed">
+                <StackPanel>
+                    <TextBlock Text="正在从 Modrinth 获取整合包…" FontSize="14" FontWeight="SemiBold"/>
+                    <ProgressBar IsIndeterminate="True" Height="5" Margin="0,12,0,0"/>
+                </StackPanel>
+            </Border>
+            <Grid x:Name="BusyOverlay" Visibility="Collapsed" Background="{DynamicResource OverlayBrush}">
+                <Border Width="410" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderStrongBrush}"
+                        BorderThickness="1" CornerRadius="16" Padding="24" VerticalAlignment="Center">
+                    <StackPanel>
+                        <TextBlock Text="正在安装整合包" FontSize="16" FontWeight="SemiBold"/>
+                        <TextBlock x:Name="BusyStage" Text="" Style="{StaticResource Muted}" Margin="0,6,0,14"
+                                   TextWrapping="Wrap"/>
+                        <ProgressBar x:Name="BusyProgress" Height="6" Minimum="0" Maximum="1"/>
+                        <TextBlock x:Name="BusyPercent" Text="0%" Style="{StaticResource Caption}" Margin="0,7,0,0"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Grid>
+
+        <Grid Grid.Row="5" Margin="2,11,0,0">
+            <TextBlock Text="数据来源：Modrinth · 目前支持 .mrpack 格式" Style="{StaticResource Caption}"/>
+            <TextBlock Text="整合包安装完成后会自动切换到实例库" Style="{StaticResource Caption}"
+                       HorizontalAlignment="Right"/>
+        </Grid>
+    </Grid>
+</UserControl>
