@@ -1,5 +1,8 @@
 using System.IO.Compression;
+using System.Net;
+using System.Net.Sockets;
 using System.Text;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using MCLneo.Core;
 using MCLneo.Core.Accounts;
@@ -75,6 +78,9 @@ internal static class Program
         Run("崩溃报告特征分析", TestCrashAnalyzer);
         Run("第三方认证地址与 NeoForge 版本映射", TestAccountHelpers);
         Run("路径越界保护", TestPathSafety);
+        Run("本地玩家日志解析", TestLocalPlayerLog);
+        await RunAsync("服务器状态协议", TestServerStatusProtocol);
+        await RunAsync("IPv6 直连中转", TestIpv6DirectRelay);
 
         Console.WriteLine();
         Console.WriteLine($"通过 {_passed} 项，失败 {_failed} 项");
@@ -86,6 +92,21 @@ internal static class Program
         try
         {
             test();
+            _passed++;
+            Console.WriteLine($"PASS  {name}");
+        }
+        catch (Exception ex)
+        {
+            _failed++;
+            Console.WriteLine($"FAIL  {name}: {ex.Message}");
+        }
+    }
+
+    private static async Task RunAsync(string name, Func<Task> test)
+    {
+        try
+        {
+            await test();
             _passed++;
             Console.WriteLine($"PASS  {name}");
         }
@@ -661,6 +682,176 @@ internal static class Program
         {
             http.Dispose();
         }
+    }
+
+    private static void TestLocalPlayerLog()
+    {
+        var root = TestPath("player-log");
+        try
+        {
+            Directory.CreateDirectory(Path.Combine(root, "logs"));
+            File.WriteAllLines(Path.Combine(root, "logs", "latest.log"), new[]
+            {
+                "[12:00:00] [Server thread/INFO]: Steve joined the game",
+                "[12:00:01] [Server thread/INFO]: Alex joined the game",
+                "[12:01:00] [Server thread/INFO]: Steve left the game"
+            });
+            var players = LocalPlayerLogService.ReadOnlinePlayers(root);
+            Assert(players.Count == 1 && players[0] == "Alex", "本地玩家日志解析错误");
+        }
+        finally
+        {
+            try { Directory.Delete(root, true); } catch { }
+        }
+    }
+
+    private static async Task TestServerStatusProtocol()
+    {
+        var listener = new TcpListener(IPAddress.Loopback, 0);
+        listener.Start();
+        var port = ((IPEndPoint)listener.LocalEndpoint).Port;
+        var json = """
+                   {"version":{"name":"1.21.4","protocol":769},"players":{"online":2,"max":20,"sample":[{"name":"Steve"},{"name":"Alex"}]},"description":{"text":"MCLneo test"}}
+                   """;
+        var server = Task.Run(async () =>
+        {
+            using var client = await listener.AcceptTcpClientAsync();
+            await using var stream = client.GetStream();
+            var buffer = new byte[512];
+            await stream.ReadAsync(buffer);
+            // Drain the status request too; closing with unread input would
+            // reset the connection before the client reads our response.
+            await Task.Delay(50);
+            while (stream.DataAvailable)
+            {
+                await stream.ReadAsync(buffer);
+            }
+            using var body = new MemoryStream();
+            WriteStatusVarInt(body, 0);
+            WriteStatusString(body, json);
+            using var packet = new MemoryStream();
+            WriteStatusVarInt(packet, (int)body.Length);
+            body.Position = 0;
+            body.CopyTo(packet);
+            await stream.WriteAsync(packet.ToArray());
+            await stream.FlushAsync();
+        });
+
+        try
+        {
+            var status = await ServerStatusService.QueryAsync("127.0.0.1", port, 4000);
+            Assert(status.Online, status.Error ?? "服务器状态查询失败");
+            Assert(status.OnlinePlayers == 2 && status.MaxPlayers == 20, "在线人数解析错误");
+            Assert(status.Players.Count == 2 && status.Players.Contains("Alex"), "玩家名单解析错误");
+            await server;
+        }
+        finally
+        {
+            listener.Stop();
+        }
+    }
+
+    private static async Task TestIpv6DirectRelay()
+    {
+        var availability = await Ipv6DirectService.CheckAsync();
+        Assert(availability.Available && availability.CanBind, availability.Message);
+        if (Ipv6DirectService.FindGlobalIpv6() is null)
+        {
+            throw new InvalidOperationException("当前机器没有可用于测试的公网 IPv6 地址");
+        }
+
+        var game = new TcpListener(IPAddress.Loopback, 0);
+        game.Start();
+        var gamePort = ((IPEndPoint)game.LocalEndpoint).Port;
+        using var serverCts = new CancellationTokenSource();
+        var gameServer = Task.Run(async () =>
+        {
+            while (!serverCts.IsCancellationRequested)
+            {
+                TcpClient client;
+                try
+                {
+                    client = await game.AcceptTcpClientAsync(serverCts.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+                catch (ObjectDisposedException)
+                {
+                    break;
+                }
+
+                _ = Task.Run(async () =>
+                {
+                    using (client)
+                    {
+                        try
+                        {
+                            await using var stream = client.GetStream();
+                            var buffer = new byte[64];
+                            var read = await stream.ReadAsync(buffer, serverCts.Token);
+                            if (read > 0)
+                            {
+                                await stream.WriteAsync(buffer.AsMemory(0, read), serverCts.Token);
+                            }
+                        }
+                        catch
+                        {
+                        }
+                    }
+                });
+            }
+        });
+
+        var service = new Ipv6DirectService();
+        Ipv6DirectSession? host = null;
+        Ipv6DirectSession? join = null;
+        try
+        {
+            host = await service.HostAsync(gamePort);
+            Assert(!string.IsNullOrWhiteSpace(host.ShareAddress), "IPv6 房主地址为空");
+            join = await service.JoinAsync(host.ShareAddress!);
+            Assert(!string.IsNullOrWhiteSpace(join.ConnectAddress), "IPv6 本地入口为空");
+            var localPort = int.Parse(join.ConnectAddress!.Split(':').Last());
+
+            using var client = new TcpClient();
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(8));
+            await client.ConnectAsync("127.0.0.1", localPort, timeout.Token);
+            await using var stream = client.GetStream();
+            var payload = Encoding.UTF8.GetBytes("MCLNEO");
+            await stream.WriteAsync(payload, timeout.Token);
+            var received = new byte[payload.Length];
+            await stream.ReadExactlyAsync(received, timeout.Token);
+            Assert(received.SequenceEqual(payload), "IPv6 直连中转数据不一致");
+        }
+        finally
+        {
+            if (join is not null) await join.StopAsync();
+            if (host is not null) await host.StopAsync();
+            serverCts.Cancel();
+            game.Stop();
+            try { await gameServer; } catch { }
+        }
+    }
+
+    private static void WriteStatusVarInt(Stream stream, int value)
+    {
+        var unsigned = (uint)value;
+        do
+        {
+            var b = (byte)(unsigned & 0x7F);
+            unsigned >>= 7;
+            if (unsigned != 0) b |= 0x80;
+            stream.WriteByte(b);
+        } while (unsigned != 0);
+    }
+
+    private static void WriteStatusString(Stream stream, string value)
+    {
+        var bytes = Encoding.UTF8.GetBytes(value);
+        WriteStatusVarInt(stream, bytes.Length);
+        stream.Write(bytes);
     }
 
     private static async Task<int> InstallSmokeAsync(string[] args)

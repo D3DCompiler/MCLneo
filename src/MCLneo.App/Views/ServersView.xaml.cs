@@ -1,6 +1,8 @@
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Threading;
 using MCLneo.App.Services;
 using MCLneo.Core.Models;
 using MCLneo.Core.Servers;
@@ -11,7 +13,11 @@ public partial class ServersView : UserControl
 {
     private readonly AppServices _services;
     private readonly AppState _state;
+    private readonly ObservableCollection<ServerRow> _rows = new();
+    private readonly DispatcherTimer _autoRefresh;
     private bool _initialized;
+    private bool _pinging;
+    private CancellationTokenSource? _pingCts;
     private List<ServerEntry> _entries = new();
 
     public ServersView(AppServices services, AppState state)
@@ -21,7 +27,19 @@ public partial class ServersView : UserControl
         _state = state;
         DataContext = state;
         _initialized = true;
-        Loaded += (_, _) => RefreshServerUi(load: true);
+        ServerList.ItemsSource = _rows;
+        _autoRefresh = new DispatcherTimer { Interval = TimeSpan.FromSeconds(30) };
+        _autoRefresh.Tick += (_, _) => _ = PingRowsAsync();
+        Loaded += (_, _) =>
+        {
+            RefreshServerUi(load: true);
+            _autoRefresh.Start();
+        };
+        Unloaded += (_, _) =>
+        {
+            _autoRefresh.Stop();
+            CancelPings();
+        };
         _state.PropertyChanged += State_PropertyChanged;
     }
 
@@ -61,15 +79,59 @@ public partial class ServersView : UserControl
         try
         {
             _entries = ServerListService.Read(instance).ToList();
-            ServerList.ItemsSource = null;
-            ServerList.ItemsSource = _entries;
-            EmptyPanel.Visibility = _entries.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+            _rows.Clear();
+            foreach (var entry in _entries)
+            {
+                _rows.Add(new ServerRow(entry));
+            }
+
+            EmptyPanel.Visibility = _rows.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+            _ = PingRowsAsync();
         }
         catch (Exception ex)
         {
             _services.Log.Error("读取服务器列表失败", ex);
             _state.Notify("读取服务器列表失败：" + ex.Message, true);
         }
+    }
+
+    private async Task PingRowsAsync()
+    {
+        if (_pinging || _rows.Count == 0) return;
+        _pinging = true;
+        CancelPings();
+        var cts = new CancellationTokenSource();
+        _pingCts = cts;
+        try
+        {
+            await Task.WhenAll(_rows.Select(async row =>
+            {
+                var status = await ServerStatusService.QueryAsync(
+                    row.Entry.Address, row.Entry.Port ?? 25565, 4500, cts.Token);
+                if (!cts.IsCancellationRequested)
+                {
+                    await Dispatcher.InvokeAsync(() => row.Apply(status));
+                }
+            }));
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            _services.Log.Warn("查询服务器状态失败", ex);
+        }
+        finally
+        {
+            if (ReferenceEquals(_pingCts, cts)) _pingCts = null;
+            cts.Dispose();
+            _pinging = false;
+        }
+    }
+
+    private void CancelPings()
+    {
+        try { _pingCts?.Cancel(); } catch { }
     }
 
     private void Refresh_Click(object sender, RoutedEventArgs e)
@@ -99,7 +161,8 @@ public partial class ServersView : UserControl
     private void Edit_Click(object sender, RoutedEventArgs e)
     {
         var instance = _state.SelectedInstance;
-        if (instance is null || sender is not FrameworkElement { Tag: ServerEntry entry }) return;
+        if (instance is null || sender is not FrameworkElement { Tag: ServerRow row }) return;
+        var entry = row.Entry;
         var index = _entries.IndexOf(entry);
         if (index < 0) return;
         var name = InputDialog.Show(Window.GetWindow(this), "编辑服务器", "服务器显示名称", entry.Name);
@@ -113,7 +176,8 @@ public partial class ServersView : UserControl
     private void Delete_Click(object sender, RoutedEventArgs e)
     {
         var instance = _state.SelectedInstance;
-        if (instance is null || sender is not FrameworkElement { Tag: ServerEntry entry }) return;
+        if (instance is null || sender is not FrameworkElement { Tag: ServerRow row }) return;
+        var entry = row.Entry;
         if (!MessageDialog.Confirm(Window.GetWindow(this), "删除服务器", $"确定删除「{entry.Name}」吗？", "删除",
                 danger: true))
         {
@@ -127,9 +191,9 @@ public partial class ServersView : UserControl
     private async void Connect_Click(object sender, RoutedEventArgs e)
     {
         var instance = _state.SelectedInstance;
-        if (instance is null || sender is not FrameworkElement { Tag: ServerEntry entry }) return;
+        if (instance is null || sender is not FrameworkElement { Tag: ServerRow row }) return;
         _state.SelectedInstance = instance;
-        await _state.LaunchAsync(instance, entry.Address, entry.Port);
+        await _state.LaunchAsync(instance, row.Entry.Address, row.Entry.Port);
     }
 
     private void Save(GameInstance instance)

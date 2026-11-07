@@ -6,6 +6,15 @@ namespace MCLneo.Core.Rooms;
 
 public sealed record Ipv6DirectProgress(string Stage, string Detail, double Fraction = 0);
 
+public sealed record Ipv6AddressInfo(string Address, string InterfaceName, bool IsTemporary);
+
+public sealed record Ipv6Availability(
+    bool Available,
+    string? Address,
+    bool IsTemporary,
+    bool CanBind,
+    string Message);
+
 /// <summary>
 /// A tiny TCP relay for IPv6 direct play. Minecraft's LAN world is normally
 /// IPv4-only and the client's direct-connect field is unreliable with raw IPv6
@@ -24,10 +33,33 @@ public sealed class Ipv6DirectService
             throw new ArgumentOutOfRangeException(nameof(gamePort), "端口必须在 1024–65535 之间");
         }
 
-        progress?.Report(new Ipv6DirectProgress("IPv6 直连", "正在查找公网 IPv6 地址", 0.15));
-        var address = FindGlobalIpv6()
-                      ?? throw new InvalidOperationException(
-                          "没有检测到公网 IPv6 地址。请确认网络支持 IPv6，并关闭临时/隐私地址后重试。");
+        progress?.Report(new Ipv6DirectProgress("IPv6 直连", "正在查找公网 IPv6 地址", 0.1));
+        var info = FindGlobalIpv6Info()
+                   ?? throw new InvalidOperationException(
+                       "没有检测到公网 IPv6 地址。请确认网络支持 IPv6，并关闭临时/隐私地址后重试。");
+        var address = info.Address;
+
+        progress?.Report(new Ipv6DirectProgress("IPv6 直连", "正在检查游戏局域网端口", 0.2));
+        using (var probe = new TcpClient(AddressFamily.InterNetwork))
+        using (var probeTimeout = CancellationTokenSource.CreateLinkedTokenSource(ct))
+        {
+            probeTimeout.CancelAfter(TimeSpan.FromSeconds(2));
+            try
+            {
+                await probe.ConnectAsync(IPAddress.Loopback, gamePort, probeTimeout.Token).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+            {
+                throw new InvalidOperationException(
+                    $"游戏端口 {gamePort} 未开放。请先在单人游戏中按 Esc 打开“对局域网开放”。");
+            }
+            catch (SocketException)
+            {
+                throw new InvalidOperationException(
+                    $"游戏端口 {gamePort} 未开放。请先在单人游戏中按 Esc 打开“对局域网开放”。");
+            }
+        }
+
         var listener = new TcpListener(IPAddress.IPv6Any, gamePort);
         listener.Server.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, true);
         try
@@ -120,8 +152,15 @@ public sealed class Ipv6DirectService
         return true;
     }
 
-    public static string? FindGlobalIpv6()
+    public static string? FindGlobalIpv6() => FindGlobalIpv6Info()?.Address;
+
+    /// <summary>
+    /// Returns the best global IPv6 address, preferring a stable (non-RFC4941)
+    /// suffix so the shared address does not change while the room is open.
+    /// </summary>
+    public static Ipv6AddressInfo? FindGlobalIpv6Info()
     {
+        var candidates = new List<Ipv6AddressInfo>();
         foreach (var nic in NetworkInterface.GetAllNetworkInterfaces())
         {
             if (nic.OperationalStatus != OperationalStatus.Up ||
@@ -145,19 +184,79 @@ public sealed class Ipv6DirectService
                 }
 
                 var text = address.ToString();
-                // Documentation / ULA ranges are not globally reachable.
+                // Documentation / ULA / mapped ranges are not globally reachable.
                 if (text.StartsWith("fc", StringComparison.OrdinalIgnoreCase) ||
                     text.StartsWith("fd", StringComparison.OrdinalIgnoreCase) ||
-                    text.StartsWith("fe80", StringComparison.OrdinalIgnoreCase))
+                    text.StartsWith("fe80", StringComparison.OrdinalIgnoreCase) ||
+                    text.StartsWith("2001:db8", StringComparison.OrdinalIgnoreCase) ||
+                    text.StartsWith("::ffff:", StringComparison.OrdinalIgnoreCase))
                 {
                     continue;
                 }
 
-                return text;
+                var temporary = OperatingSystem.IsWindows() && info.SuffixOrigin == SuffixOrigin.Random;
+                candidates.Add(new Ipv6AddressInfo(text, nic.Name, temporary));
             }
         }
 
-        return null;
+        return candidates
+            .OrderBy(c => c.IsTemporary ? 1 : 0)
+            .ThenBy(c => c.Address, StringComparer.OrdinalIgnoreCase)
+            .FirstOrDefault();
+    }
+
+    public static async Task<Ipv6Availability> CheckAsync(
+        int? gamePort = null,
+        CancellationToken ct = default)
+    {
+        var info = FindGlobalIpv6Info();
+        if (info is null)
+        {
+            return new Ipv6Availability(false, null, false, false,
+                "未检测到公网 IPv6。请确认路由器/光猫已开启 IPv6，并关闭系统的临时 IPv6 地址。");
+        }
+
+        var canBind = false;
+        try
+        {
+            var probe = new TcpListener(IPAddress.IPv6Any, 0);
+            probe.Start();
+            probe.Stop();
+            canBind = true;
+        }
+        catch (SocketException)
+        {
+        }
+
+        if (!canBind)
+        {
+            return new Ipv6Availability(false, info.Address, info.IsTemporary, false,
+                $"检测到 {info.Address}，但本机无法监听 IPv6 端口。请检查系统网络组件。");
+        }
+
+        var portHint = "";
+        if (gamePort is >= 1024 and <= 65535)
+        {
+            using var client = new TcpClient(AddressFamily.InterNetwork);
+            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            timeout.CancelAfter(TimeSpan.FromSeconds(1.5));
+            try
+            {
+                await client.ConnectAsync(IPAddress.Loopback, gamePort.Value, timeout.Token)
+                    .ConfigureAwait(false);
+            }
+            catch (Exception ex) when (ex is SocketException or OperationCanceledException)
+            {
+                portHint = $"\n游戏端口 {gamePort} 尚未开放，请先在单人游戏中“对局域网开放”。";
+            }
+        }
+
+        var addressHint = info.IsTemporary
+            ? "当前是临时 IPv6 地址，可能随时变化；建议关闭隐私扩展后重新检测。"
+            : "使用稳定公网 IPv6 地址。";
+        var firewallHint = "如果朋友仍无法连接，请放行 Windows 防火墙和路由器 IPv6 入站规则。";
+        return new Ipv6Availability(true, info.Address, info.IsTemporary, true,
+            $"公网 IPv6 可用：{info.Address}\n{addressHint}{portHint}\n{firewallHint}");
     }
 }
 

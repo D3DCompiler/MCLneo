@@ -6,6 +6,7 @@ using MCLneo.Core.Accounts;
 using MCLneo.Core.Minecraft;
 using MCLneo.Core.Models;
 using MCLneo.Core.Rooms;
+using MCLneo.Core.Servers;
 
 namespace MCLneo.App.Services;
 
@@ -37,6 +38,13 @@ public sealed class AppState : ObservableObject, IDisposable
     private string? _directConnectAddress;
     private string _directRoleText = "";
     private string _roomRoleText = "未连接";
+    private int? _roomGamePort;
+    private int? _directGamePort;
+    private string _roomPlayersStatus = "创建或加入联机房间后，这里会显示在线玩家";
+    private bool _roomPlayersBusy;
+    private string _ipv6Status = "正在检测公网 IPv6…";
+    private bool _ipv6Available;
+    private string? _ipv6Address;
     private bool _isInitialized;
 
     public AppState(AppServices services)
@@ -44,6 +52,7 @@ public sealed class AppState : ObservableObject, IDisposable
         _services = services;
         Instances = new ObservableCollection<GameInstance>();
         JavaRuntimes = new ObservableCollection<JavaRuntime>();
+        RoomPlayers = new ObservableCollection<string>();
         PlayerName = services.Settings.Current.LastPlayerName;
     }
 
@@ -51,6 +60,19 @@ public sealed class AppState : ObservableObject, IDisposable
     public LauncherSettings Settings => _services.Settings.Current;
     public ObservableCollection<GameInstance> Instances { get; }
     public ObservableCollection<JavaRuntime> JavaRuntimes { get; }
+    public ObservableCollection<string> RoomPlayers { get; }
+
+    public string RoomPlayersStatus
+    {
+        get => _roomPlayersStatus;
+        private set => SetProperty(ref _roomPlayersStatus, value);
+    }
+
+    public bool IsRoomPlayersBusy
+    {
+        get => _roomPlayersBusy;
+        private set => SetProperty(ref _roomPlayersBusy, value);
+    }
 
     public event Action<string, bool>? ToastRequested;
 
@@ -304,6 +326,48 @@ public sealed class AppState : ObservableObject, IDisposable
         private set => SetProperty(ref _roomRoleText, value);
     }
 
+    public string Ipv6Status
+    {
+        get => _ipv6Status;
+        private set => SetProperty(ref _ipv6Status, value);
+    }
+
+    public bool Ipv6Available
+    {
+        get => _ipv6Available;
+        private set => SetProperty(ref _ipv6Available, value);
+    }
+
+    public string? Ipv6Address
+    {
+        get => _ipv6Address;
+        private set => SetProperty(ref _ipv6Address, value);
+    }
+
+    public void RefreshIpv6Status()
+    {
+        var info = Ipv6DirectService.FindGlobalIpv6Info();
+        Ipv6Available = info is not null;
+        Ipv6Address = info?.Address;
+        Ipv6Status = info is null
+            ? "未检测到公网 IPv6，建议使用 EasyTier 备用联机。"
+            : info.IsTemporary
+                ? $"公网 IPv6（临时地址）：{info.Address}\n临时地址可能变化，建议关闭系统隐私扩展后重新检测。"
+                : $"公网 IPv6 可用：{info.Address}\n可以优先使用 IPv6 直连。";
+    }
+
+    public async Task CheckIpv6Async(int? gamePort = null)
+    {
+        Ipv6Status = "正在检测公网 IPv6…";
+        var result = await Ipv6DirectService.CheckAsync(gamePort).ConfigureAwait(false);
+        await Application.Current.Dispatcher.InvokeAsync(() =>
+        {
+            Ipv6Available = result.Available;
+            Ipv6Address = result.Address;
+            Ipv6Status = result.Message;
+        });
+    }
+
     public async Task InitializeAsync()
     {
         _accountFile = await _services.AuthlibStore.LoadAsync();
@@ -316,6 +380,7 @@ public sealed class AppState : ObservableObject, IDisposable
 
         await ReloadJavaAsync();
         await RefreshInstancesAsync();
+        RefreshIpv6Status();
         IsInitialized = true;
     }
 
@@ -542,6 +607,7 @@ public sealed class AppState : ObservableObject, IDisposable
             });
             var session = await _services.Rooms.HostAsync(gamePort, progress);
             ActiveRoom = session;
+            _roomGamePort = gamePort;
             RoomInviteCode = session.Invite.Encode();
             RoomConnectAddress = null;
             RoomRoleText = "房主";
@@ -554,6 +620,9 @@ public sealed class AppState : ObservableObject, IDisposable
                 Notify($"联机模块已退出（{code}）", code != 0);
                 var finished = ActiveRoom;
                 ActiveRoom = null;
+                _roomGamePort = null;
+                RoomPlayers.Clear();
+                RoomPlayersStatus = "联机模块已退出";
                 RoomInviteCode = null;
                 RoomStatus = "联机模块已退出";
                 if (finished is not null)
@@ -599,6 +668,7 @@ public sealed class AppState : ObservableObject, IDisposable
             });
             var session = await _services.Rooms.JoinAsync(code, progress);
             ActiveRoom = session;
+            _roomGamePort = null;
             RoomInviteCode = null;
             RoomConnectAddress = session.ConnectAddress;
             RoomRoleText = "成员";
@@ -612,6 +682,9 @@ public sealed class AppState : ObservableObject, IDisposable
                 var finished = ActiveRoom;
                 ActiveRoom = null;
                 RoomConnectAddress = null;
+                _roomGamePort = null;
+                RoomPlayers.Clear();
+                RoomPlayersStatus = "联机模块已退出";
                 RoomStatus = "联机模块已退出";
                 if (finished is not null)
                 {
@@ -661,6 +734,7 @@ public sealed class AppState : ObservableObject, IDisposable
                 DirectProgress = Math.Clamp(p.Fraction, 0, 1);
             });
             _directSession = await _services.DirectRooms.HostAsync(gamePort, progress);
+            _directGamePort = gamePort;
             DirectShareAddress = _directSession.ShareAddress;
             DirectConnectAddress = null;
             DirectRoleText = "房主";
@@ -706,6 +780,7 @@ public sealed class AppState : ObservableObject, IDisposable
                 DirectProgress = Math.Clamp(p.Fraction, 0, 1);
             });
             _directSession = await _services.DirectRooms.JoinAsync(endpoint, progress);
+            _directGamePort = null;
             DirectShareAddress = null;
             DirectConnectAddress = _directSession.ConnectAddress;
             DirectRoleText = "成员";
@@ -733,9 +808,12 @@ public sealed class AppState : ObservableObject, IDisposable
         await session.StopAsync();
         session.Dispose();
         _directSession = null;
+        _directGamePort = null;
         DirectShareAddress = null;
         DirectConnectAddress = null;
         DirectRoleText = "";
+        RoomPlayers.Clear();
+        RoomPlayersStatus = "IPv6 直连已断开";
         DirectStatus = "已断开 IPv6 直连";
         DirectProgress = 0;
         OnPropertyChanged(nameof(IsDirectActive));
@@ -753,11 +831,131 @@ public sealed class AppState : ObservableObject, IDisposable
         await room.StopAsync();
         room.Dispose();
         ActiveRoom = null;
+        _roomGamePort = null;
         RoomInviteCode = null;
         RoomConnectAddress = null;
+        RoomPlayers.Clear();
+        RoomPlayersStatus = "已离开联机房间";
         RoomStatus = "已离开房间";
         RoomProgress = 0;
         Notify("已离开联机房间", false);
+    }
+
+    public async Task RefreshRoomPlayersAsync()
+    {
+        if (IsRoomPlayersBusy) return;
+
+        var isHost = ActiveRoom?.Role == RoomRole.Host ||
+                     (IsDirectActive && !string.IsNullOrWhiteSpace(DirectShareAddress));
+        (string Host, int Port)? endpoint = null;
+        if (IsDirectActive)
+        {
+            if (TryParseHostPort(DirectConnectAddress, out var directHost, out var directPort))
+            {
+                endpoint = (directHost, directPort);
+            }
+            else if (_directGamePort is int directGamePort)
+            {
+                endpoint = ("127.0.0.1", directGamePort);
+            }
+        }
+        else if (IsRoomActive)
+        {
+            if (TryParseHostPort(RoomConnectAddress, out var roomHost, out var roomPort))
+            {
+                endpoint = (roomHost, roomPort);
+            }
+            else if (_roomGamePort is int roomGamePort)
+            {
+                endpoint = ("127.0.0.1", roomGamePort);
+            }
+        }
+
+        var localNames = isHost && SelectedInstance is { } hostInstance
+            ? LocalPlayerLogService.ReadOnlinePlayers(hostInstance.Directory).ToList()
+            : new List<string>();
+        if (endpoint is null && localNames.Count == 0)
+        {
+            RoomPlayers.Clear();
+            RoomPlayersStatus = IsRoomActive || IsDirectActive
+                ? "等待游戏开放局域网，或先启动单人世界"
+                : "创建或加入联机房间后，这里会显示在线玩家";
+            return;
+        }
+
+        IsRoomPlayersBusy = true;
+        RoomPlayersStatus = "正在查询在线玩家…";
+        try
+        {
+            ServerStatus? status = null;
+            if (endpoint is { } target)
+            {
+                status = await ServerStatusService.QueryAsync(target.Host, target.Port).ConfigureAwait(false);
+            }
+
+            var names = new List<string>();
+            foreach (var name in localNames.Concat(status?.Players ?? Array.Empty<string>()))
+            {
+                if (!string.IsNullOrWhiteSpace(name) &&
+                    !names.Contains(name, StringComparer.OrdinalIgnoreCase))
+                {
+                    names.Add(name.Trim());
+                }
+            }
+
+            await Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                RoomPlayers.Clear();
+                foreach (var name in names)
+                {
+                    RoomPlayers.Add(name);
+                }
+
+                if (status is { Online: true })
+                {
+                    RoomPlayersStatus = names.Count > 0
+                        ? $"{status.OnlinePlayers}/{status.MaxPlayers} 人在线"
+                        : "服务器在线，但未公开玩家名单";
+                }
+                else if (names.Count > 0)
+                {
+                    RoomPlayersStatus = $"{names.Count} 人在线（来自本地游戏日志）";
+                }
+                else
+                {
+                    RoomPlayersStatus = "无法获取玩家列表，请确认游戏已开放局域网";
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            _services.Log.Warn("刷新联机玩家列表失败", ex);
+            RoomPlayersStatus = "查询玩家列表失败：" + ex.Message;
+        }
+        finally
+        {
+            IsRoomPlayersBusy = false;
+        }
+    }
+
+    private static bool TryParseHostPort(string? value, out string host, out int port)
+    {
+        host = "";
+        port = 25565;
+        if (string.IsNullOrWhiteSpace(value)) return false;
+        var text = value.Trim();
+        if (text.StartsWith('['))
+        {
+            var end = text.IndexOf(']');
+            if (end <= 1 || end + 2 >= text.Length || text[end + 1] != ':') return false;
+            host = text[1..end];
+            return int.TryParse(text[(end + 2)..], out port) && port is > 0 and <= 65535;
+        }
+
+        var colon = text.LastIndexOf(':');
+        if (colon <= 0 || text.Count(c => c == ':') != 1) return false;
+        host = text[..colon];
+        return int.TryParse(text[(colon + 1)..], out port) && port is > 0 and <= 65535;
     }
 
     public async Task SetPlayerNameAsync(string name)

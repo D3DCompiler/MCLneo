@@ -60,15 +60,41 @@
                                                TextTrimming="CharacterEllipsis"/>
                                     <TextBlock Text="{Binding Ip}" Style="{StaticResource Muted}" FontSize="11"
                                                Margin="0,4,0,0"/>
+                                    <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                                        <TextBlock Text="{Binding OnlineText}" FontSize="10.5"
+                                                   Foreground="{DynamicResource AccentBrush}"/>
+                                        <TextBlock Text="{Binding DetailText}" Style="{StaticResource Caption}"
+                                                   FontSize="9.5" Margin="8,0,0,0"
+                                                   TextTrimming="CharacterEllipsis"/>
+                                    </StackPanel>
+                                    <ItemsControl ItemsSource="{Binding Players}" Margin="0,6,0,0"
+                                                  Visibility="{Binding HasPlayers, Converter={StaticResource BoolToVisibility}}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <WrapPanel/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Style="{StaticResource TagBorder}" Padding="6,2" Margin="0,0,5,4">
+                                                    <TextBlock Text="{Binding}" FontSize="10"
+                                                               Foreground="{DynamicResource TextBrush}"/>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <TextBlock Text="服务器未公开玩家名单" Style="{StaticResource Caption}"
+                                               FontSize="10" Margin="0,5,0,0"
+                                               Visibility="{Binding ShowEmptyPlayers, Converter={StaticResource BoolToVisibility}}"/>
                                 </StackPanel>
                                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                                     <Button Content="启动并连接" Style="{StaticResource SmallPrimaryButton}" Width="92"
-                                            Height="32" Padding="0" Tag="{Binding}" Click="Connect_Click"/>
+                                            Height="32" Padding="0" Tag="{Binding Entry}" Click="Connect_Click"/>
                                     <Button Content="编辑" Style="{StaticResource SmallButton}" Width="54" Height="32"
-                                            Padding="0" Margin="7,0,0,0" Tag="{Binding}" Click="Edit_Click"/>
+                                            Padding="0" Margin="7,0,0,0" Tag="{Binding Entry}" Click="Edit_Click"/>
                                     <Button Content="&#xE74D;" Style="{StaticResource SmallButton}" Width="32" Height="32"
                                             Padding="0" Margin="7,0,0,0" FontFamily="{StaticResource IconFont}"
-                                            Foreground="{DynamicResource DangerBrush}" Tag="{Binding}" Click="Delete_Click"/>
+                                            Foreground="{DynamicResource DangerBrush}" Tag="{Binding Entry}" Click="Delete_Click"/>
                                 </StackPanel>
                             </Grid>
                         </Border>

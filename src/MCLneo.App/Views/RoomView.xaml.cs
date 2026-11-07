@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Threading;
 using MCLneo.App.Services;
 
 namespace MCLneo.App.Views;
@@ -9,6 +10,7 @@ public partial class RoomView : UserControl
 {
     private readonly AppServices _services;
     private readonly AppState _state;
+    private readonly DispatcherTimer _playersTimer;
 
     public RoomView(AppServices services, AppState state)
     {
@@ -17,6 +19,29 @@ public partial class RoomView : UserControl
         _state = state;
         DataContext = state;
         AdminWarning.Visibility = ElevationService.IsElevated ? Visibility.Collapsed : Visibility.Visible;
+        _playersTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
+        _playersTimer.Tick += async (_, _) => await _state.RefreshRoomPlayersAsync();
+        Loaded += async (_, _) =>
+        {
+            _playersTimer.Start();
+            _state.RefreshIpv6Status();
+            await _state.RefreshRoomPlayersAsync();
+        };
+        Unloaded += (_, _) => _playersTimer.Stop();
+    }
+
+    private async void RefreshPlayers_Click(object sender, RoutedEventArgs e)
+    {
+        await _state.RefreshRoomPlayersAsync();
+    }
+
+    private async void CheckIpv6_Click(object sender, RoutedEventArgs e)
+    {
+        int? port = int.TryParse(DirectHostPortBox.Text.Trim(), out var parsed) &&
+                    parsed is >= 1024 and <= 65535
+            ? parsed
+            : null;
+        await _state.CheckIpv6Async(port);
     }
 
     private async void Host_Click(object sender, RoutedEventArgs e)
@@ -34,6 +59,7 @@ public partial class RoomView : UserControl
         }
 
         await _state.HostRoomAsync(port);
+        await _state.RefreshRoomPlayersAsync();
         if (_state.IsRoomActive && !string.IsNullOrWhiteSpace(_state.RoomInviteCode))
         {
             TryCopy(_state.RoomInviteCode, "邀请码已复制到剪贴板");
@@ -55,6 +81,7 @@ public partial class RoomView : UserControl
         }
 
         await _state.JoinRoomAsync(code);
+        await _state.RefreshRoomPlayersAsync();
         if (_state.IsRoomActive && !string.IsNullOrWhiteSpace(_state.RoomConnectAddress))
         {
             TryCopy(_state.RoomConnectAddress, "连接地址已复制到剪贴板");
@@ -71,6 +98,7 @@ public partial class RoomView : UserControl
         }
 
         await _state.HostDirectAsync(port);
+        await _state.RefreshRoomPlayersAsync();
     }
 
     private async void JoinDirect_Click(object sender, RoutedEventArgs e)
@@ -84,6 +112,7 @@ public partial class RoomView : UserControl
         }
 
         await _state.JoinDirectAsync(endpoint);
+        await _state.RefreshRoomPlayersAsync();
     }
 
     private void CopyDirect_Click(object sender, RoutedEventArgs e)
