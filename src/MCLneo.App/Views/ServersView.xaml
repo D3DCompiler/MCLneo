@@ -88,13 +88,15 @@
                                                Visibility="{Binding ShowEmptyPlayers, Converter={StaticResource BoolToVisibility}}"/>
                                 </StackPanel>
                                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Button Content="刷新" Style="{StaticResource SmallButton}" Width="48"
+                                            Height="32" Padding="0" Tag="{Binding}" Click="RefreshStatus_Click"/>
                                     <Button Content="启动并连接" Style="{StaticResource SmallPrimaryButton}" Width="92"
-                                            Height="32" Padding="0" Tag="{Binding Entry}" Click="Connect_Click"/>
+                                            Height="32" Padding="0" Margin="7,0,0,0" Tag="{Binding}" Click="Connect_Click"/>
                                     <Button Content="编辑" Style="{StaticResource SmallButton}" Width="54" Height="32"
-                                            Padding="0" Margin="7,0,0,0" Tag="{Binding Entry}" Click="Edit_Click"/>
+                                            Padding="0" Margin="7,0,0,0" Tag="{Binding}" Click="Edit_Click"/>
                                     <Button Content="&#xE74D;" Style="{StaticResource SmallButton}" Width="32" Height="32"
                                             Padding="0" Margin="7,0,0,0" FontFamily="{StaticResource IconFont}"
-                                            Foreground="{DynamicResource DangerBrush}" Tag="{Binding Entry}" Click="Delete_Click"/>
+                                            Foreground="{DynamicResource DangerBrush}" Tag="{Binding}" Click="Delete_Click"/>
                                 </StackPanel>
                             </Grid>
                         </Border>

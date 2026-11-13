@@ -140,6 +140,15 @@ public partial class ServersView : UserControl
         if (instance is not null) LoadServers(instance);
     }
 
+    private async void RefreshStatus_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { Tag: ServerRow row }) return;
+        row.BeginQuery();
+        var status = await ServerStatusService.QueryAsync(
+            row.Entry.Address, row.Entry.Port ?? 25565, 4500);
+        row.Apply(status);
+    }
+
     private void Add_Click(object sender, RoutedEventArgs e)
     {
         var instance = _state.SelectedInstance;

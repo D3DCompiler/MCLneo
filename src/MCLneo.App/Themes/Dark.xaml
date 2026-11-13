@@ -40,6 +40,30 @@
     <SolidColorBrush x:Key="GlassHighlightBrush" Color="#33FFFFFF"/>
     <SolidColorBrush x:Key="GlassBrush" Color="#D92A2A35"/>
     <SolidColorBrush x:Key="PopupGlassBrush" Color="#2A2A35"/>
+    <SolidColorBrush x:Key="SidebarGlassBrush" Color="#660A0A0E"/>
+    <LinearGradientBrush x:Key="NavLensBrush" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#593E3E55" Offset="0"/>
+        <GradientStop Color="#1A242430" Offset="0.55"/>
+        <GradientStop Color="#0DFFFFFF" Offset="1"/>
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="NavLensBorderBrush" Color="#26FFFFFF"/>
+    <RadialGradientBrush x:Key="NavAuroraBrush" GradientOrigin="0.25,0.15" Center="0.25,0.15"
+                         RadiusX="1.2" RadiusY="1.2">
+        <GradientStop Color="#4D506DFF" Offset="0"/>
+        <GradientStop Color="#147A5CFF" Offset="0.55"/>
+        <GradientStop Color="#00000000" Offset="1"/>
+    </RadialGradientBrush>
+    <RadialGradientBrush x:Key="NavLensGlowBrush" GradientOrigin="0.25,0.15" Center="0.25,0.15"
+                         RadiusX="0.9" RadiusY="0.9">
+        <GradientStop Color="#88FFFFFF" Offset="0"/>
+        <GradientStop Color="#18FFFFFF" Offset="0.55"/>
+        <GradientStop Color="#00FFFFFF" Offset="1"/>
+    </RadialGradientBrush>
+    <LinearGradientBrush x:Key="NavLensSheenBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#2EFFFFFF" Offset="0"/>
+        <GradientStop Color="#0AFFFFFF" Offset="0.46"/>
+        <GradientStop Color="#00FFFFFF" Offset="1"/>
+    </LinearGradientBrush>
     <LinearGradientBrush x:Key="GlassSheenBrush" StartPoint="0,0" EndPoint="1,1">
         <GradientStop Color="#33FFFFFF" Offset="0"/>
         <GradientStop Color="#00FFFFFF" Offset="0.48"/>

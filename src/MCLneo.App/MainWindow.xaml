@@ -7,7 +7,7 @@
         mc:Ignorable="d"
         Title="MCLneo" Width="1280" Height="820" MinWidth="1080" MinHeight="680"
         WindowStyle="None" ResizeMode="CanResize" WindowStartupLocation="CenterScreen"
-        AllowsTransparency="True" Background="Transparent" UseLayoutRounding="True" SnapsToDevicePixels="True"
+        AllowsTransparency="False" Background="#01000000" UseLayoutRounding="True" SnapsToDevicePixels="True"
         Closing="Window_Closing" SourceInitialized="Window_SourceInitialized"
         StateChanged="Window_StateChanged" TextElement.Foreground="{DynamicResource TextBrush}">
     <shell:WindowChrome.WindowChrome>
@@ -15,7 +15,7 @@
                             CornerRadius="0" NonClientFrameEdges="None" UseAeroCaptionButtons="False"/>
     </shell:WindowChrome.WindowChrome>
 
-    <Border x:Name="WindowRoot" Background="{DynamicResource BgBrush}" BorderBrush="{DynamicResource BorderStrongBrush}"
+    <Border x:Name="WindowRoot" Background="Transparent" BorderBrush="{DynamicResource BorderStrongBrush}"
             BorderThickness="0" CornerRadius="10" ClipToBounds="True">
         <Grid>
             <Grid.ColumnDefinitions>
@@ -24,16 +24,48 @@
             </Grid.ColumnDefinitions>
 
             <!-- Compact navigation rail -->
-            <Border x:Name="SidebarRoot" Grid.Column="0" Background="{DynamicResource SidebarBrush}"
-                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,1,0">
+            <Border x:Name="SidebarRoot" Grid.Column="0" Background="{DynamicResource SidebarGlassBrush}"
+                    BorderBrush="{DynamicResource NavLensBorderBrush}" BorderThickness="0,0,1,0"
+                    ClipToBounds="True">
                 <Grid>
+                    
                     <Grid.RowDefinitions>
                         <RowDefinition Height="78"/>
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
+                    <Border Grid.RowSpan="3" IsHitTestVisible="False" ClipToBounds="True" CacheMode="BitmapCache">
+                        <Grid>
+                            <Ellipse Width="190" Height="300" Fill="{DynamicResource NavAuroraBrush}"
+                                     HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-78,-70,0,0"
+                                     Opacity="0.48"/>
+                            <Ellipse Width="170" Height="260" Fill="{DynamicResource NavAuroraBrush}"
+                                     HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="-82,0,0,-55"
+                                     Opacity="0.24"/>
+                        </Grid>
+                    </Border>
+                    <Canvas x:Name="NavLensLayer" Grid.RowSpan="3" ClipToBounds="True"
+                            IsHitTestVisible="False" Panel.ZIndex="10">
+                        <Border x:Name="NavLiquidLens" Width="68" Height="50" CornerRadius="18"
+                                Background="{DynamicResource NavLensBrush}"
+                                BorderBrush="{DynamicResource NavLensBorderBrush}" BorderThickness="1"
+                                Opacity="0" RenderTransformOrigin="0.5,0.5">
+                            <Border.RenderTransform>
+                                <TransformGroup>
+                                    <TranslateTransform x:Name="NavLensTranslate"/>
+                                    <ScaleTransform x:Name="NavLensScale" ScaleX="1" ScaleY="1"/>
+                                </TransformGroup>
+                            </Border.RenderTransform>
+                            <Grid ClipToBounds="True">
+                                <Border CornerRadius="17" Background="{DynamicResource NavLensSheenBrush}"
+                                        Opacity="0.38"/>
+                                <Ellipse Width="36" Height="22" HorizontalAlignment="Left" VerticalAlignment="Top"
+                                         Margin="7,1,0,0" Fill="{DynamicResource NavLensGlowBrush}" Opacity="0.45"/>
+                            </Grid>
+                        </Border>
+                    </Canvas>
 
-                    <Button x:Name="LogoMark" Grid.Row="0" Style="{StaticResource BareButton}"
+                    <Button x:Name="LogoMark" Grid.Row="0" Panel.ZIndex="20" Style="{StaticResource BareButton}"
                             HorizontalAlignment="Center" VerticalAlignment="Center" Click="Logo_Click"
                             ToolTip="MCLneo · 点五下试试">
                         <StackPanel>
@@ -49,7 +81,7 @@
                         </StackPanel>
                     </Button>
 
-                    <StackPanel Grid.Row="1" Margin="10,2,10,0">
+                    <StackPanel Grid.Row="1" Panel.ZIndex="20" Margin="10,2,10,0">
                         <RadioButton x:Name="NavHome" Style="{StaticResource RailNavButton}" Tag="home"
                                      Checked="Nav_Checked" ToolTip="主页">
                             <StackPanel>
@@ -128,7 +160,7 @@
                         </RadioButton>
                     </StackPanel>
 
-                    <StackPanel Grid.Row="2" Margin="10,0,10,12">
+                    <StackPanel Grid.Row="2" Panel.ZIndex="20" Margin="10,0,10,12">
                         <RadioButton x:Name="NavSettings" Style="{StaticResource RailNavButton}" Tag="settings"
                                      Checked="Nav_Checked" ToolTip="设置">
                             <StackPanel>
@@ -140,7 +172,7 @@
                 </Grid>
             </Border>
             <!-- Main area -->
-            <Grid Grid.Column="1">
+            <Grid Grid.Column="1" Background="{DynamicResource BgBrush}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="60"/>
                     <RowDefinition Height="*"/>

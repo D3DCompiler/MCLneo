@@ -37,7 +37,7 @@ public partial class RoomView : UserControl
 
     private async void CheckIpv6_Click(object sender, RoutedEventArgs e)
     {
-        int? port = int.TryParse(DirectHostPortBox.Text.Trim(), out var parsed) &&
+        int? port = int.TryParse(HostPortBox.Text.Trim(), out var parsed) &&
                     parsed is >= 1024 and <= 65535
             ? parsed
             : null;
@@ -53,13 +53,29 @@ public partial class RoomView : UserControl
             return;
         }
 
-        if (!EnsureElevated())
+        var mode = ConnectionModeBox.SelectedIndex;
+        _state.RefreshIpv6Status();
+        var useDirect = mode == 1 || (mode == 0 && _state.Ipv6Available);
+        if (useDirect)
         {
-            return;
+            await _state.HostDirectAsync(port);
+            await _state.RefreshRoomPlayersAsync();
+            if (mode == 0 && !_state.IsDirectActive)
+            {
+                // Automatic mode: fall back to EasyTier when the IPv6 path
+                // cannot start (for example, no inbound IPv6 route).
+                if (!EnsureElevated()) return;
+                await _state.HostRoomAsync(port);
+                await _state.RefreshRoomPlayersAsync();
+            }
+        }
+        else
+        {
+            if (!EnsureElevated()) return;
+            await _state.HostRoomAsync(port);
+            await _state.RefreshRoomPlayersAsync();
         }
 
-        await _state.HostRoomAsync(port);
-        await _state.RefreshRoomPlayersAsync();
         if (_state.IsRoomActive && !string.IsNullOrWhiteSpace(_state.RoomInviteCode))
         {
             TryCopy(_state.RoomInviteCode, "邀请码已复制到剪贴板");
@@ -68,51 +84,45 @@ public partial class RoomView : UserControl
 
     private async void Join_Click(object sender, RoutedEventArgs e)
     {
-        var code = JoinCodeBox.Text.Trim();
-        if (string.IsNullOrWhiteSpace(code))
+        var value = JoinInputBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(value))
         {
-            _state.Notify("请输入邀请码", true);
+            _state.Notify("请输入 IPv6 地址或邀请码", true);
+            JoinInputBox.Focus();
             return;
         }
 
-        if (!EnsureElevated())
+        var mode = ConnectionModeBox.SelectedIndex;
+        var looksDirect = value.StartsWith("[", StringComparison.Ordinal) &&
+                          value.Contains("]:", StringComparison.Ordinal);
+        var looksInvite = value.StartsWith("MCLN1:", StringComparison.OrdinalIgnoreCase);
+        var useDirect = mode == 1 || (mode == 0 && looksDirect);
+        if (useDirect)
         {
+            await _state.JoinDirectAsync(value);
+            await _state.RefreshRoomPlayersAsync();
             return;
         }
 
-        await _state.JoinRoomAsync(code);
+        if (mode == 1)
+        {
+            _state.Notify("IPv6 直连地址格式应为 [IPv6]:端口", true);
+            return;
+        }
+
+        if (!looksInvite && mode != 2)
+        {
+            _state.Notify("无法识别地址。IPv6 直连请填 [IPv6]:端口，EasyTier 请粘贴 MCLN1: 邀请码", true);
+            return;
+        }
+
+        if (!EnsureElevated()) return;
+        await _state.JoinRoomAsync(value);
         await _state.RefreshRoomPlayersAsync();
         if (_state.IsRoomActive && !string.IsNullOrWhiteSpace(_state.RoomConnectAddress))
         {
             TryCopy(_state.RoomConnectAddress, "连接地址已复制到剪贴板");
         }
-    }
-
-    private async void HostDirect_Click(object sender, RoutedEventArgs e)
-    {
-        if (!int.TryParse(DirectHostPortBox.Text.Trim(), out var port) || port is < 1024 or > 65535)
-        {
-            _state.Notify("请输入 1024–65535 的有效游戏端口", true);
-            DirectHostPortBox.Focus();
-            return;
-        }
-
-        await _state.HostDirectAsync(port);
-        await _state.RefreshRoomPlayersAsync();
-    }
-
-    private async void JoinDirect_Click(object sender, RoutedEventArgs e)
-    {
-        var endpoint = DirectJoinEndpointBox.Text.Trim();
-        if (string.IsNullOrWhiteSpace(endpoint))
-        {
-            _state.Notify("请输入房主的 IPv6 地址和端口", true);
-            DirectJoinEndpointBox.Focus();
-            return;
-        }
-
-        await _state.JoinDirectAsync(endpoint);
-        await _state.RefreshRoomPlayersAsync();
     }
 
     private void CopyDirect_Click(object sender, RoutedEventArgs e)
@@ -161,21 +171,6 @@ public partial class RoomView : UserControl
     }
 
     private void Elevate_Click(object sender, RoutedEventArgs e) => EnsureElevated();
-
-    private void Paste_Click(object sender, RoutedEventArgs e)
-    {
-        try
-        {
-            if (Clipboard.ContainsText())
-            {
-                JoinCodeBox.Text = Clipboard.GetText().Trim();
-            }
-        }
-        catch (Exception ex)
-        {
-            _state.Notify("无法读取剪贴板：" + ex.Message, true);
-        }
-    }
 
     private void CopyInvite_Click(object sender, RoutedEventArgs e)
     {

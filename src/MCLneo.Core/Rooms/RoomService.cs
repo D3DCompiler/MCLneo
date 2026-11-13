@@ -403,7 +403,6 @@ public sealed class RoomService
             "--tcp-whitelist", "0",
             "--udp-whitelist", "0",
             "--port-forward", $"tcp://127.0.0.1:{localPort}/10.114.114.114:{invite.GamePort}",
-            "--port-forward", $"udp://127.0.0.1:{localPort}/10.114.114.114:{invite.GamePort}",
             "-p", invite.Peer
         };
 

@@ -10,11 +10,11 @@
                 <StackPanel>
                     <TextBlock Text="{Binding Greeting}" Style="{StaticResource H1}"/>
                     <TextBlock Text="选一个世界，检查它的加载器与存档，然后按下启动。"
-                               Style="{StaticResource Muted}" Margin="1,6,0,0"/>
+                               Style="{StaticResource Muted}" Margin="0,6,0,0"/>
                 </StackPanel>
                 <StackPanel HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,4,0,0">
                     <TextBlock Text="{Binding TodayText}" Style="{StaticResource Muted}" HorizontalAlignment="Right"/>
-                    <TextBlock Text="MCLneo 0.1.5" Style="{StaticResource Caption}" HorizontalAlignment="Right"
+                    <TextBlock Text="MCLneo 0.1.9" Style="{StaticResource Caption}" HorizontalAlignment="Right"
                                Margin="0,5,0,0"/>
                 </StackPanel>
             </Grid>
@@ -38,7 +38,7 @@
                                    FontSize="34" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"
                                    Margin="0,12,0,0" TextTrimming="CharacterEllipsis"/>
                         <TextBlock Text="{Binding SelectedInstance.Subtitle}" Style="{StaticResource Muted}"
-                                   Margin="1,6,0,0"/>
+                                   Margin="0,6,0,0"/>
                         <StackPanel Orientation="Horizontal" Margin="0,18,0,0">
                             <Border Style="{StaticResource TagBorder}" Margin="0,0,7,0">
                                 <TextBlock Text="{Binding SelectedInstance.DisplayLoader}"
@@ -74,7 +74,8 @@
                         </StackPanel>
                     </StackPanel>
 
-                    <Grid Grid.Column="1" Margin="0,22,28,22">
+                    <Grid Grid.Column="1" Margin="0,22,28,22"
+                          Visibility="{Binding HasSelectedInstance, Converter={StaticResource BoolToVisibility}}">
                         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                             <Grid Width="158" Height="158">
                                 <Border x:Name="DialPulseRing" Width="142" Height="142" CornerRadius="999"
@@ -126,7 +127,8 @@
                                 Padding="8,2" FontSize="11.5" Click="GoInstances_Click"/>
                     </Grid>
 
-                    <Border Style="{StaticResource Card}" Padding="6">
+                    <Border Style="{StaticResource Card}" Padding="6"
+                            Visibility="{Binding Instances.Count, Converter={StaticResource CountToVisibility}, ConverterParameter=Invert}">
                         <ItemsControl ItemsSource="{Binding Instances}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>

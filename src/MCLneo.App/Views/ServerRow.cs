@@ -30,6 +30,17 @@ public sealed class ServerRow : INotifyPropertyChanged
         ? _status.Error ?? (_status.Version.Length > 0 ? "Minecraft " + _status.Version : "")
         : _status?.Error ?? "";
 
+    public void BeginQuery()
+    {
+        _status = null;
+        _players = Array.Empty<string>();
+        OnPropertyChanged(nameof(Players));
+        OnPropertyChanged(nameof(HasPlayers));
+        OnPropertyChanged(nameof(ShowEmptyPlayers));
+        OnPropertyChanged(nameof(OnlineText));
+        OnPropertyChanged(nameof(DetailText));
+    }
+
     public void Apply(ServerStatus status)
     {
         _status = status;

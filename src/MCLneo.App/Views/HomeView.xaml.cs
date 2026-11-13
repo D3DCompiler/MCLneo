@@ -22,11 +22,19 @@ public partial class HomeView : UserControl
         _navigate = navigate;
         DataContext = state;
         Loaded += (_, _) => StartDialPulse();
+        Unloaded += (_, _) => StopDialPulse();
+    }
+
+    private void StopDialPulse()
+    {
+        DialPulseRing?.BeginAnimation(OpacityProperty, null);
+        DialPulseScale?.BeginAnimation(System.Windows.Media.ScaleTransform.ScaleXProperty, null);
+        DialPulseScale?.BeginAnimation(System.Windows.Media.ScaleTransform.ScaleYProperty, null);
     }
 
     private void StartDialPulse()
     {
-        if (DialPulseRing is null || DialPulseScale is null) return;
+        if (DialPulseRing is null || DialPulseScale is null || !_state.HasSelectedInstance) return;
         var ease = new SineEase { EasingMode = EasingMode.EaseInOut };
         var fade = new DoubleAnimation(0.30, 0.72, TimeSpan.FromSeconds(2.4))
         {

@@ -6,20 +6,20 @@
              mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="740" TextElement.Foreground="{DynamicResource TextBrush}">
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
         <StackPanel Margin="0,0,12,24">
-            <Grid Margin="2,0,0,20">
+            <Grid Margin="2,0,0,18">
                 <StackPanel>
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="联机房间" Style="{StaticResource H2}"/>
+                        <TextBlock Text="联机" Style="{StaticResource H2}"/>
                         <Border Style="{StaticResource AccentTagBorder}" Margin="10,1,0,0" Padding="8,3">
-                            <TextBlock Text="IPV6 优先 · EASYTIER 备用" FontSize="8.5" FontWeight="Bold"
+                            <TextBlock Text="IPV6 优先 · EASYTIER 回退" FontSize="8.5" FontWeight="Bold"
                                        Foreground="{DynamicResource AccentBrush}"/>
                         </Border>
                     </StackPanel>
-                    <TextBlock Text="优先使用 IPv6 直连；没有公网 IPv6 时，用 EasyTier 作为备用方案。"
+                    <TextBlock Text="自动优先 IPv6 直连；连不上时自动使用 EasyTier 房间。"
                                Style="{StaticResource Muted}" Margin="0,6,0,0"/>
                     <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
                         <TextBlock Text="{Binding Ipv6Status}" Style="{StaticResource Caption}" FontSize="10.5"
-                                   TextWrapping="Wrap" MaxWidth="650" VerticalAlignment="Center"/>
+                                   TextWrapping="Wrap" MaxWidth="660" VerticalAlignment="Center"/>
                         <Button Content="检测 IPv6" Style="{StaticResource SmallButton}" Padding="10,5"
                                 Margin="10,0,0,0" Click="CheckIpv6_Click"/>
                     </StackPanel>
@@ -29,13 +29,13 @@
                     <StackPanel Orientation="Horizontal">
                         <Ellipse Width="6" Height="6" Fill="{DynamicResource AccentBrush}" VerticalAlignment="Center"
                                  Margin="0,0,7,0"/>
-                        <TextBlock Text="{Binding RoomRoleText, TargetNullValue='未连接'}" FontSize="10.5"
+                        <TextBlock Text="{Binding ConnectionRoleText, TargetNullValue='未连接'}" FontSize="10.5"
                                    Foreground="{DynamicResource MutedBrush}"/>
                     </StackPanel>
                 </Border>
             </Grid>
 
-            <Border Style="{StaticResource Card}" Padding="18" Margin="0,0,0,16">
+            <Border Style="{StaticResource Card}" Padding="18" Margin="0,0,0,14">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -73,17 +73,18 @@
                 </Grid>
             </Border>
 
-            <Border x:Name="AdminWarning" Visibility="Collapsed" Background="{DynamicResource WarningSoftBrush}" BorderBrush="{DynamicResource WarningBorderBrush}"
-                    BorderThickness="1" CornerRadius="12" Padding="14,11" Margin="0,0,0,14">
+            <Border x:Name="AdminWarning" Visibility="Collapsed" Background="{DynamicResource WarningSoftBrush}"
+                    BorderBrush="{DynamicResource WarningBorderBrush}" BorderThickness="1" CornerRadius="12"
+                    Padding="14,11" Margin="0,0,0,14">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <StackPanel>
-                        <TextBlock Text="联机模块需要管理员权限" FontSize="12.5" FontWeight="SemiBold"
+                        <TextBlock Text="EasyTier 回退需要管理员权限" FontSize="12.5" FontWeight="SemiBold"
                                    Foreground="{DynamicResource WarningBrush}"/>
-                        <TextBlock Text="EasyTier 需要创建虚拟网卡（TUN）。如果当前没有以管理员身份运行，请重启启动器后再创建或加入房间。"
+                        <TextBlock Text="IPv6 直连不需要管理员权限；只有自动回退到 EasyTier 时才需要创建 TUN 虚拟网卡。"
                                    Style="{StaticResource Muted}" FontSize="11" TextWrapping="Wrap" Margin="0,3,14,0"/>
                     </StackPanel>
                     <Button Grid.Column="1" Content="以管理员身份重启" Style="{StaticResource SecondaryButton}"
@@ -91,307 +92,170 @@
                 </Grid>
             </Border>
 
-            <Grid Visibility="{Binding IsRoomActive, Converter={StaticResource InverseBoolToVisibility}}">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="16"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-
-                <Border Grid.Column="0" Style="{StaticResource Card}" Padding="24">
-                    <StackPanel>
-                        <StackPanel Orientation="Horizontal">
-                            <Border Width="44" Height="44" CornerRadius="13" Background="{DynamicResource AccentSoftBrush}">
-                                <TextBlock Text="&#xE710;" FontFamily="{StaticResource IconFont}" FontSize="18"
-                                           Foreground="{DynamicResource AccentBrush}" HorizontalAlignment="Center"
-                                           VerticalAlignment="Center"/>
-                            </Border>
-                            <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
-                                <TextBlock Text="创建房间" FontSize="18" FontWeight="SemiBold"/>
-                                <TextBlock Text="邀请朋友加入你的单人世界" Style="{StaticResource Caption}" Margin="0,3,0,0"/>
-                            </StackPanel>
-                        </StackPanel>
-                        <TextBlock Text="在单人游戏中按 Esc，选择「对局域网开放」，把聊天栏显示的端口号填在下面。"
-                                   Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,18,0,0"/>
-                        <TextBlock Text="局域网端口" Style="{StaticResource SectionLabel}" Margin="1,18,0,7"/>
-                        <TextBox x:Name="HostPortBox" Height="42" FontSize="14" MaxLength="5"
-                                 ToolTip="例如 54321"/>
-                        <TextBlock Text="端口范围 1024–65535，必须与游戏聊天栏显示的端口一致。"
-                                   Style="{StaticResource Caption}" Margin="2,6,0,0"/>
-                        <Button x:Name="HostButton" Content="创建房间" Style="{StaticResource PrimaryButton}"
-                                Height="42" Margin="0,18,0,0" Click="Host_Click"
-                                IsEnabled="{Binding IsRoomBusy, Converter={StaticResource InverseBool}}"/>
-                        <ProgressBar Value="{Binding RoomProgress, Mode=OneWay}" Height="5" Margin="0,16,0,0"
-                                     Visibility="{Binding IsRoomBusy, Converter={StaticResource BoolToVisibility}}"/>
-                        <TextBlock Text="{Binding RoomStatus}" Style="{StaticResource Muted}" FontSize="11"
-                                   TextWrapping="Wrap" Margin="1,8,0,0"/>
-                    </StackPanel>
-                </Border>
-
-                <Border Grid.Column="2" Style="{StaticResource Card}" Padding="24">
-                    <StackPanel>
-                        <StackPanel Orientation="Horizontal">
-                            <Border Width="44" Height="44" CornerRadius="13" Background="{DynamicResource BlueSoftBrush}">
-                                <TextBlock Text="&#xE8FA;" FontFamily="{StaticResource IconFont}" FontSize="18"
-                                           Foreground="{DynamicResource BlueBrush}" HorizontalAlignment="Center"
-                                           VerticalAlignment="Center"/>
-                            </Border>
-                            <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
-                                <TextBlock Text="加入房间" FontSize="18" FontWeight="SemiBold"/>
-                                <TextBlock Text="输入朋友发来的邀请码" Style="{StaticResource Caption}" Margin="0,3,0,0"/>
-                            </StackPanel>
-                        </StackPanel>
-                        <TextBlock Text="邀请码以 MCLN1: 开头。加入后，在游戏的多人游戏页面连接下方显示的本地地址。"
-                                   Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,18,0,0"/>
-                        <TextBlock Text="邀请码" Style="{StaticResource SectionLabel}" Margin="1,18,0,7"/>
-                        <TextBox x:Name="JoinCodeBox" Height="72" FontSize="11" AcceptsReturn="True"
-                                 TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
-                                 ToolTip="粘贴完整的 MCLN1: 邀请码"/>
-                        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                            <Button Content="从剪贴板粘贴" Style="{StaticResource SmallGhostButton}" Padding="10,5"
-                                    Click="Paste_Click"/>
-                        </StackPanel>
-                        <Button x:Name="JoinButton" Content="加入房间" Style="{StaticResource SecondaryButton}"
-                                Height="42" Margin="0,10,0,0" Click="Join_Click"
-                                IsEnabled="{Binding IsRoomBusy, Converter={StaticResource InverseBool}}"/>
-                        <TextBlock Text="{Binding RoomStatus}" Style="{StaticResource Muted}" FontSize="11"
-                                   TextWrapping="Wrap" Margin="1,8,0,0"/>
-                    </StackPanel>
-                </Border>
-            </Grid>
-
-            <Border Style="{StaticResource Card}" Padding="20" Margin="0,16,0,0">
-                <StackPanel>
-                    <TextBlock Text="EasyTier 使用说明（无公网 IPv6 时使用）" Style="{StaticResource H3}"/>
-                    <Grid Margin="0,12,0,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <StackPanel Margin="0,0,18,0">
-                            <TextBlock Text="01  房主" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}"/>
-                            <TextBlock Text="进入单人世界，按 Esc 打开「对局域网开放」，记下端口。" Style="{StaticResource Muted}"
-                                       TextWrapping="Wrap" Margin="0,5,0,0"/>
-                        </StackPanel>
-                        <StackPanel Grid.Column="1" Margin="0,0,18,0">
-                            <TextBlock Text="02  创建" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}"/>
-                            <TextBlock Text="输入端口并创建房间，把 MCLN1: 开头的邀请码发给朋友。" Style="{StaticResource Muted}"
-                                       TextWrapping="Wrap" Margin="0,5,0,0"/>
-                        </StackPanel>
-                        <StackPanel Grid.Column="2">
-                            <TextBlock Text="03  加入" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}"/>
-                            <TextBlock Text="朋友加入后在多人游戏里连接显示的 127.0.0.1 地址。" Style="{StaticResource Muted}"
-                                       TextWrapping="Wrap" Margin="0,5,0,0"/>
-                        </StackPanel>
-                    </Grid>
-                </StackPanel>
-            </Border>
-
-            <!-- IPv6 direct -->
-            <Border Style="{StaticResource Card}" Padding="22" Margin="0,16,0,0">
+            <Border Style="{StaticResource Card}" Padding="22">
                 <StackPanel>
                     <Grid>
                         <StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="IPv6 直连" FontSize="17" FontWeight="SemiBold"
-                                           Foreground="{DynamicResource TextBrush}"/>
-                                <Border Style="{StaticResource AccentTagBorder}" Padding="7,2" Margin="8,0,0,0">
-                                    <TextBlock Text="优先方案" FontSize="8" FontWeight="Bold"
-                                               Foreground="{DynamicResource AccentBrush}"/>
-                                </Border>
-                            </StackPanel>
-                            <TextBlock Text="双方都有公网 IPv6 时，可以跳过 EasyTier 直接连接。房主填写游戏端口，朋友填写房主地址。"
-                                       Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,5,0,0"/>
+                            <TextBlock Text="创建 / 加入联机" Style="{StaticResource H3}"/>
+                            <TextBlock Text="先选联机方式；自动模式优先 IPv6，失败或没有公网 IPv6 时使用 EasyTier。"
+                                       Style="{StaticResource Muted}" Margin="0,5,0,0"/>
                         </StackPanel>
-                        <Border Style="{StaticResource TagBorder}" HorizontalAlignment="Right" VerticalAlignment="Center"
-                                Padding="10,4">
-                            <TextBlock Text="TCP · 不创建虚拟网卡" FontSize="9.5"
-                                       Foreground="{DynamicResource MutedBrush}"/>
-                        </Border>
+                        <StackPanel HorizontalAlignment="Right" VerticalAlignment="Top">
+                            <TextBlock Text="联机方式" Style="{StaticResource SectionLabel}" Margin="1,0,0,5"/>
+                            <ComboBox x:Name="ConnectionModeBox" Width="150" Height="36" SelectedIndex="0">
+                                <ComboBoxItem Content="自动选择"/>
+                                <ComboBoxItem Content="IPv6 直连"/>
+                                <ComboBoxItem Content="EasyTier 房间"/>
+                            </ComboBox>
+                        </StackPanel>
                     </Grid>
 
-                    <Grid Margin="0,16,0,0"
-                          Visibility="{Binding IsDirectActive, Converter={StaticResource InverseBoolToVisibility}}">
+                    <Grid Margin="0,18,0,0"
+                          Visibility="{Binding IsMultiplayerActive, Converter={StaticResource InverseBoolToVisibility}}">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="16"/>
+                            <ColumnDefinition Width="18"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
+
                         <StackPanel>
-                            <TextBlock Text="我是房主" Style="{StaticResource SectionLabel}"/>
-                            <TextBox x:Name="DirectHostPortBox" Height="40" FontSize="13" MaxLength="5"
-                                     ToolTip="Minecraft 对局域网开放时显示的端口"/>
-                            <Button Content="创建 IPv6 直连" Style="{StaticResource PrimaryButton}" Height="40"
-                                    Margin="0,9,0,0" Click="HostDirect_Click"
-                                    IsEnabled="{Binding IsDirectBusy, Converter={StaticResource InverseBool}}"/>
+                            <TextBlock Text="创建联机" FontSize="15" FontWeight="SemiBold"/>
+                            <TextBlock Text="在单人游戏中按 Esc，选择“对局域网开放”，把聊天栏端口填在下面。"
+                                       Style="{StaticResource Muted}" FontSize="11" TextWrapping="Wrap" Margin="0,5,0,0"/>
+                            <TextBlock Text="局域网端口" Style="{StaticResource SectionLabel}" Margin="1,14,0,6"/>
+                            <TextBox x:Name="HostPortBox" Height="40" FontSize="14" MaxLength="5"
+                                     ToolTip="例如 54321"/>
+                            <Button x:Name="HostButton" Content="创建联机" Style="{StaticResource PrimaryButton}"
+                                    Height="40" Margin="0,10,0,0" Click="Host_Click"/>
                         </StackPanel>
+
                         <StackPanel Grid.Column="2">
-                            <TextBlock Text="我是成员" Style="{StaticResource SectionLabel}"/>
-                            <TextBox x:Name="DirectJoinEndpointBox" Height="40" FontSize="13"
-                                     ToolTip="例如 [2408:xxxx::1]:54321"/>
-                            <Button Content="加入 IPv6 直连" Style="{StaticResource SecondaryButton}" Height="40"
-                                    Margin="0,9,0,0" Click="JoinDirect_Click"
-                                    IsEnabled="{Binding IsDirectBusy, Converter={StaticResource InverseBool}}"/>
+                            <TextBlock Text="加入联机" FontSize="15" FontWeight="SemiBold"/>
+                            <TextBlock Text="自动识别 IPv6 地址或 MCLN1 邀请码；EasyTier 回退时使用邀请码。"
+                                       Style="{StaticResource Muted}" FontSize="11" TextWrapping="Wrap" Margin="0,5,0,0"/>
+                            <TextBlock Text="IPv6 地址 / 邀请码" Style="{StaticResource SectionLabel}" Margin="1,14,0,6"/>
+                            <TextBox x:Name="JoinInputBox" Height="76" FontSize="11" AcceptsReturn="True"
+                                     TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
+                                     ToolTip="粘贴 [IPv6]:端口 或 MCLN1: 邀请码"/>
+                            <Button x:Name="JoinButton" Content="加入联机" Style="{StaticResource SecondaryButton}"
+                                    Height="40" Margin="0,10,0,0" Click="Join_Click"/>
                         </StackPanel>
                     </Grid>
 
-                    <ProgressBar Value="{Binding DirectProgress, Mode=OneWay}" Minimum="0" Maximum="1" Height="5"
+                    <ProgressBar Value="{Binding RoomProgress, Mode=OneWay}" Minimum="0" Maximum="1" Height="5"
                                  Margin="0,12,0,0"
+                                 Visibility="{Binding IsRoomBusy, Converter={StaticResource BoolToVisibility}}"/>
+                    <ProgressBar Value="{Binding DirectProgress, Mode=OneWay}" Minimum="0" Maximum="1" Height="5"
+                                 Margin="0,6,0,0"
                                  Visibility="{Binding IsDirectBusy, Converter={StaticResource BoolToVisibility}}"/>
+                    <TextBlock Text="{Binding RoomStatus}" Style="{StaticResource Muted}" FontSize="11"
+                               TextWrapping="Wrap" Margin="0,7,0,0"/>
                     <TextBlock Text="{Binding DirectStatus}" Style="{StaticResource Muted}" FontSize="11"
-                               TextWrapping="Wrap" Margin="0,8,0,0"/>
-
-                    <Border Visibility="{Binding IsDirectActive, Converter={StaticResource BoolToVisibility}}"
-                            Background="{DynamicResource InsetBrush}" BorderBrush="{DynamicResource BorderBrush}"
-                            BorderThickness="1" CornerRadius="12" Padding="16" Margin="0,14,0,0">
-                        <StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <Border Style="{StaticResource AccentTagBorder}" Padding="8,2">
-                                    <TextBlock Text="{Binding DirectRoleText}" FontSize="9.5" FontWeight="Bold"
-                                               Foreground="{DynamicResource AccentBrush}"/>
-                                </Border>
-                                <TextBlock Text="IPv6 直连已开启" Style="{StaticResource Caption}"
-                                           VerticalAlignment="Center" Margin="8,0,0,0"/>
-                            </StackPanel>
-
-                            <StackPanel Visibility="{Binding DirectShareAddress, Converter={StaticResource NullToVisibility}}">
-                                <TextBlock Text="把这个地址发给朋友" Style="{StaticResource SectionLabel}" Margin="0,12,0,5"/>
-                                <TextBlock Text="{Binding DirectShareAddress}" FontFamily="{StaticResource MonoFont}"
-                                           FontSize="18" FontWeight="SemiBold"
-                                           Foreground="{DynamicResource AccentBrush}" TextWrapping="Wrap"/>
-                            </StackPanel>
-
-                            <StackPanel Visibility="{Binding DirectConnectAddress, Converter={StaticResource NullToVisibility}}">
-                                <TextBlock Text="在 Minecraft 多人游戏中连接" Style="{StaticResource SectionLabel}" Margin="0,12,0,5"/>
-                                <TextBlock Text="{Binding DirectConnectAddress}" FontFamily="{StaticResource MonoFont}"
-                                           FontSize="22" FontWeight="SemiBold"
-                                           Foreground="{DynamicResource AccentBrush}"/>
-                            </StackPanel>
-
-                            <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
-                                <Button Content="复制地址" Style="{StaticResource PrimaryButton}" Padding="15,8"
-                                        Click="CopyDirect_Click"/>
-                                <Button Content="断开直连" Style="{StaticResource DangerButton}" Padding="15,8"
-                                        Margin="8,0,0,0" Click="StopDirect_Click"/>
-                            </StackPanel>
-                        </StackPanel>
-                    </Border>
+                               TextWrapping="Wrap" Margin="0,3,0,0"/>
                 </StackPanel>
             </Border>
 
-            <!-- Active room -->
+            <!-- Active EasyTier room -->
             <Border Visibility="{Binding IsRoomActive, Converter={StaticResource BoolToVisibility}}"
                     Style="{StaticResource Card}" Padding="0" Background="{DynamicResource HeroBrush}"
-                    BorderBrush="{DynamicResource AccentBorderBrush}">
+                    BorderBrush="{DynamicResource AccentBorderBrush}" Margin="0,14,0,0">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="280"/>
+                        <ColumnDefinition Width="250"/>
                     </Grid.ColumnDefinitions>
                     <StackPanel Margin="28,24" VerticalAlignment="Center">
                         <StackPanel Orientation="Horizontal">
                             <Border Style="{StaticResource AccentTagBorder}" Padding="9,3">
-                                <TextBlock Text="{Binding RoomRoleText}" FontSize="10" FontWeight="Bold"
+                                <TextBlock Text="EasyTier" FontSize="10" FontWeight="Bold"
                                            Foreground="{DynamicResource AccentBrush}"/>
                             </Border>
                             <TextBlock Text="{Binding RoomStatus}" Style="{StaticResource Muted}" VerticalAlignment="Center"
                                        Margin="10,0,0,0" TextTrimming="CharacterEllipsis"/>
                         </StackPanel>
-
                         <StackPanel Visibility="{Binding RoomInviteCode, Converter={StaticResource NullToVisibility}}">
-                            <TextBlock Text="把邀请码发给朋友" FontSize="19" FontWeight="Bold" Margin="0,18,0,0"/>
-                            <TextBlock Text="朋友在 MCLneo 的联机页面粘贴邀请码即可加入。"
-                                       Style="{StaticResource Muted}" Margin="0,5,0,0"/>
-                            <Border Background="{DynamicResource OverlayBrush}" BorderBrush="{DynamicResource BorderStrongBrush}" BorderThickness="1" CornerRadius="10"
-                                    Padding="12,9" Margin="0,14,0,0">
-                                <Grid>
-                                    <TextBox Text="{Binding RoomInviteCode, Mode=OneWay}" IsReadOnly="True" Background="Transparent"
-                                             BorderThickness="0" Padding="0" FontFamily="{StaticResource MonoFont}"
-                                             FontSize="10.5" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
-                                             MaxHeight="60"/>
-                                </Grid>
+                            <TextBlock Text="把邀请码发给朋友" FontSize="19" FontWeight="Bold" Margin="0,16,0,0"/>
+                            <TextBlock Text="朋友在联机页面粘贴邀请码即可加入。" Style="{StaticResource Muted}" Margin="0,5,0,0"/>
+                            <Border Background="{DynamicResource OverlayBrush}" BorderBrush="{DynamicResource BorderStrongBrush}"
+                                    BorderThickness="1" CornerRadius="10" Padding="12,9" Margin="0,12,0,0">
+                                <TextBox Text="{Binding RoomInviteCode, Mode=OneWay}" IsReadOnly="True" Background="Transparent"
+                                         BorderThickness="0" Padding="0" FontFamily="{StaticResource MonoFont}"
+                                         FontSize="10.5" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
+                                         MaxHeight="60"/>
                             </Border>
                         </StackPanel>
-
                         <StackPanel Visibility="{Binding RoomConnectAddress, Converter={StaticResource NullToVisibility}}">
-                            <TextBlock Text="在多人游戏中连接" FontSize="19" FontWeight="Bold" Margin="0,18,0,0"/>
-                            <TextBlock Text="复制下面的地址，在 Minecraft 的「多人游戏 → 直接连接」中粘贴。"
-                                       Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,5,0,0"/>
+                            <TextBlock Text="在多人游戏中连接" FontSize="17" FontWeight="Bold" Margin="0,14,0,0"/>
                             <TextBlock Text="{Binding RoomConnectAddress}" FontFamily="{StaticResource MonoFont}"
-                                       FontSize="25" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}"
-                                       Margin="0,12,0,0"/>
+                                       FontSize="22" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}"
+                                       Margin="0,8,0,0"/>
                         </StackPanel>
-
-                        <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
-                            <Button Content="复制邀请码" Style="{StaticResource PrimaryButton}" Padding="17,9"
+                        <StackPanel Orientation="Horizontal" Margin="0,18,0,0">
+                            <Button Content="复制邀请码" Style="{StaticResource PrimaryButton}" Padding="15,8"
                                     Click="CopyInvite_Click"
                                     Visibility="{Binding RoomInviteCode, Converter={StaticResource NullToVisibility}}"/>
-                            <Button Content="复制连接地址" Style="{StaticResource PrimaryButton}" Padding="17,9"
-                                    Click="CopyAddress_Click"
+                            <Button Content="复制连接地址" Style="{StaticResource PrimaryButton}" Padding="15,8"
+                                    Margin="8,0,0,0" Click="CopyAddress_Click"
                                     Visibility="{Binding RoomConnectAddress, Converter={StaticResource NullToVisibility}}"/>
-                            <Button Content="打开联机日志" Style="{StaticResource SecondaryButton}" Padding="15,9"
+                            <Button Content="联机日志" Style="{StaticResource SecondaryButton}" Padding="13,8"
                                     Margin="8,0,0,0" Click="OpenLog_Click"/>
-                            <Button Content="离开房间" Style="{StaticResource DangerButton}" Padding="15,9"
+                            <Button Content="离开房间" Style="{StaticResource DangerButton}" Padding="13,8"
                                     Margin="8,0,0,0" Click="Stop_Click"/>
                         </StackPanel>
                     </StackPanel>
-
                     <Grid Grid.Column="1" IsHitTestVisible="False">
-                        <Canvas Width="126" Height="126" HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <Ellipse Width="112" Height="112" Stroke="{DynamicResource AccentBorderBrush}" StrokeThickness="1" Opacity="0.7"/>
-                            <Ellipse Width="72" Height="72" Stroke="{DynamicResource AccentBrush}" StrokeThickness="1" Opacity="0.45"/>
-                            <Ellipse Width="10" Height="10" Fill="{DynamicResource AccentBrush}" HorizontalAlignment="Center"
-                                     VerticalAlignment="Center"/>
-                            <Ellipse Width="7" Height="7" Fill="{DynamicResource BlueBrush}" Canvas.Left="8" Canvas.Top="30"/>
-                            <Ellipse Width="7" Height="7" Fill="{DynamicResource BlueBrush}" Canvas.Left="102" Canvas.Top="80"/>
+                        <Canvas Width="110" Height="110" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Ellipse Width="98" Height="98" Stroke="{DynamicResource AccentBorderBrush}" StrokeThickness="1" Opacity="0.7"/>
+                            <Ellipse Width="62" Height="62" Stroke="{DynamicResource AccentBrush}" StrokeThickness="1" Opacity="0.45"/>
+                            <Ellipse Width="9" Height="9" Fill="{DynamicResource AccentBrush}"/>
                         </Canvas>
                     </Grid>
                 </Grid>
             </Border>
 
-            <Border Style="{StaticResource Card}" Padding="20" Margin="0,16,0,0">
+            <!-- Active IPv6 direct -->
+            <Border Visibility="{Binding IsDirectActive, Converter={StaticResource BoolToVisibility}}"
+                    Style="{StaticResource Card}" Padding="24" Margin="0,14,0,0">
                 <StackPanel>
-                    <Grid>
-                        <TextBlock Text="IPv6 直连说明" Style="{StaticResource H3}"/>
-                        <Border Style="{StaticResource TagBorder}" HorizontalAlignment="Right"
-                                VerticalAlignment="Center" Padding="9,3">
-                            <TextBlock Text="无需管理员权限" FontSize="9.5"
-                                       Foreground="{DynamicResource MutedBrush}"/>
+                    <StackPanel Orientation="Horizontal">
+                        <Border Style="{StaticResource AccentTagBorder}" Padding="9,3">
+                            <TextBlock Text="{Binding DirectRoleText}" FontSize="10" FontWeight="Bold"
+                                       Foreground="{DynamicResource AccentBrush}"/>
                         </Border>
-                    </Grid>
-                    <TextBlock Text="前提：房主和成员都有公网 IPv6。房主需要允许 Windows 防火墙和路由器防火墙放行对应 TCP 端口；没有公网 IPv6 时请使用上方的 EasyTier 房间。"
-                               Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,8,0,0"/>
-                    <Grid Margin="0,14,0,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <StackPanel Margin="0,0,18,0">
-                            <TextBlock Text="01  房主创建" FontSize="10" FontWeight="Bold"
-                                       Foreground="{DynamicResource AccentBrush}"/>
-                            <TextBlock Text="在游戏里「对局域网开放」，记下端口。填到“我是房主”并创建直连。"
-                                       Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,5,0,0"/>
-                        </StackPanel>
-                        <StackPanel Grid.Column="1" Margin="0,0,18,0">
-                            <TextBlock Text="02  分享地址" FontSize="10" FontWeight="Bold"
-                                       Foreground="{DynamicResource AccentBrush}"/>
-                            <TextBlock Text="复制生成的 [IPv6]:端口 地址发给朋友，并确认防火墙已放行。"
-                                       Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,5,0,0"/>
-                        </StackPanel>
-                        <StackPanel Grid.Column="2">
-                            <TextBlock Text="03  成员加入" FontSize="10" FontWeight="Bold"
-                                       Foreground="{DynamicResource AccentBrush}"/>
-                            <TextBlock Text="粘贴地址加入，然后在 Minecraft 中连接显示的 127.0.0.1:端口。"
-                                       Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,5,0,0"/>
-                        </StackPanel>
-                    </Grid>
-                    <Border Background="{DynamicResource InsetBrush}" BorderBrush="{DynamicResource BorderBrush}"
-                            BorderThickness="1" CornerRadius="9" Padding="11,8" Margin="0,12,0,0">
-                        <TextBlock Text="提示：Minecraft 的“直接连接”对裸 IPv6 地址支持不稳定，所以这里由启动器在本机建立 127.0.0.1 入口，游戏里始终填启动器显示的地址。"
-                                   Style="{StaticResource Caption}" TextWrapping="Wrap"/>
-                    </Border>
+                        <TextBlock Text="IPv6 直连已开启" Style="{StaticResource Muted}" VerticalAlignment="Center"
+                                   Margin="10,0,0,0"/>
+                    </StackPanel>
+                    <StackPanel Visibility="{Binding DirectShareAddress, Converter={StaticResource NullToVisibility}}">
+                        <TextBlock Text="把这个地址发给朋友" Style="{StaticResource SectionLabel}" Margin="0,14,0,5"/>
+                        <TextBlock Text="{Binding DirectShareAddress}" FontFamily="{StaticResource MonoFont}"
+                                   FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}"
+                                   TextWrapping="Wrap"/>
+                    </StackPanel>
+                    <StackPanel Visibility="{Binding DirectConnectAddress, Converter={StaticResource NullToVisibility}}">
+                        <TextBlock Text="在多人游戏中连接" Style="{StaticResource SectionLabel}" Margin="0,14,0,5"/>
+                        <TextBlock Text="{Binding DirectConnectAddress}" FontFamily="{StaticResource MonoFont}"
+                                   FontSize="22" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+                        <Button Content="复制地址" Style="{StaticResource PrimaryButton}" Padding="15,8"
+                                Click="CopyDirect_Click"/>
+                        <Button Content="断开直连" Style="{StaticResource DangerButton}" Padding="15,8"
+                                Margin="8,0,0,0" Click="StopDirect_Click"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}" Padding="20" Margin="0,14,0,0">
+                <StackPanel>
+                    <TextBlock Text="联机说明" Style="{StaticResource H3}"/>
+                    <TextBlock Text="1. 房主先在单人游戏中按 Esc，选择“对局域网开放”，记下端口。"
+                               Style="{StaticResource Muted}" Margin="0,10,0,0" TextWrapping="Wrap"/>
+                    <TextBlock Text="2. 自动模式：检测到公网 IPv6 时创建 IPv6 直连；否则创建 EasyTier 房间。"
+                               Style="{StaticResource Muted}" Margin="0,5,0,0" TextWrapping="Wrap"/>
+                    <TextBlock Text="3. IPv6 直连需要双方都有公网 IPv6，并放行防火墙入站；EasyTier 回退需要管理员权限。"
+                               Style="{StaticResource Muted}" Margin="0,5,0,0" TextWrapping="Wrap"/>
+                    <TextBlock Text="4. 加入方的 Minecraft 连接地址会显示在创建/加入联机后出现的卡片中。"
+                               Style="{StaticResource Muted}" Margin="0,5,0,0" TextWrapping="Wrap"/>
                 </StackPanel>
             </Border>
         </StackPanel>

@@ -263,12 +263,20 @@ public sealed class AppState : ObservableObject, IDisposable
             if (SetProperty(ref _activeRoom, value))
             {
                 OnPropertyChanged(nameof(IsRoomActive));
+                OnPropertyChanged(nameof(IsMultiplayerActive));
+                OnPropertyChanged(nameof(ConnectionRoleText));
                 OnPropertyChanged(nameof(RoomConnectAddress));
             }
         }
     }
 
     public bool IsRoomActive => ActiveRoom?.IsRunning == true;
+
+    public bool IsMultiplayerActive => IsRoomActive || IsDirectActive;
+
+    public string ConnectionRoleText =>
+        IsDirectActive ? (string.IsNullOrWhiteSpace(DirectRoleText) ? "IPv6 直连" : "IPv6 " + DirectRoleText)
+                       : RoomRoleText;
 
     public string? RoomInviteCode
     {
@@ -317,13 +325,25 @@ public sealed class AppState : ObservableObject, IDisposable
     public string DirectRoleText
     {
         get => _directRoleText;
-        private set => SetProperty(ref _directRoleText, value);
+        private set
+        {
+            if (SetProperty(ref _directRoleText, value))
+            {
+                OnPropertyChanged(nameof(ConnectionRoleText));
+            }
+        }
     }
 
     public string RoomRoleText
     {
         get => _roomRoleText;
-        private set => SetProperty(ref _roomRoleText, value);
+        private set
+        {
+            if (SetProperty(ref _roomRoleText, value))
+            {
+                OnPropertyChanged(nameof(ConnectionRoleText));
+            }
+        }
     }
 
     public string Ipv6Status
@@ -378,8 +398,7 @@ public sealed class AppState : ObservableObject, IDisposable
             PlayerName = _activeAuthlib.PlayerName;
         }
 
-        await ReloadJavaAsync();
-        await RefreshInstancesAsync();
+        await Task.WhenAll(ReloadJavaAsync(), RefreshInstancesAsync());
         RefreshIpv6Status();
         IsInitialized = true;
     }
@@ -741,6 +760,8 @@ public sealed class AppState : ObservableObject, IDisposable
             DirectStatus = "IPv6 直连已开启，把地址发给朋友";
             DirectProgress = 1;
             OnPropertyChanged(nameof(IsDirectActive));
+            OnPropertyChanged(nameof(IsMultiplayerActive));
+            OnPropertyChanged(nameof(ConnectionRoleText));
             Notify("IPv6 直连已开启", false);
         }
         catch (Exception ex)
@@ -787,6 +808,8 @@ public sealed class AppState : ObservableObject, IDisposable
             DirectStatus = "已连接，在多人游戏中连接下面的地址";
             DirectProgress = 1;
             OnPropertyChanged(nameof(IsDirectActive));
+            OnPropertyChanged(nameof(IsMultiplayerActive));
+            OnPropertyChanged(nameof(ConnectionRoleText));
             Notify("已加入 IPv6 直连", false);
         }
         catch (Exception ex)
@@ -817,6 +840,8 @@ public sealed class AppState : ObservableObject, IDisposable
         DirectStatus = "已断开 IPv6 直连";
         DirectProgress = 0;
         OnPropertyChanged(nameof(IsDirectActive));
+            OnPropertyChanged(nameof(IsMultiplayerActive));
+            OnPropertyChanged(nameof(ConnectionRoleText));
         Notify("已断开 IPv6 直连", false);
     }
 
@@ -872,7 +897,8 @@ public sealed class AppState : ObservableObject, IDisposable
         }
 
         var localNames = isHost && SelectedInstance is { } hostInstance
-            ? LocalPlayerLogService.ReadOnlinePlayers(hostInstance.Directory).ToList()
+            ? (await Task.Run(() => LocalPlayerLogService.ReadOnlinePlayers(hostInstance.Directory))
+                .ConfigureAwait(false)).ToList()
             : new List<string>();
         if (endpoint is null && localNames.Count == 0)
         {

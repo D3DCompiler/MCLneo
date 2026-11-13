@@ -38,6 +38,13 @@ public partial class MainWindow : Window
     private TranslateTransform? _rootTranslate;
     private TranslateTransform? _sidebarTranslate;
     private TranslateTransform? _contentTranslate;
+    private bool _navLensReady;
+    private RadioButton? _navLensTarget;
+    private readonly Stopwatch _navLensClock = new();
+    private TimeSpan _navLensLastFrame;
+    private double _navLensTargetX;
+    private double _navLensTargetY;
+    private bool _navLensLoopActive;
 
     public MainWindow(AppServices services, AppState state, string? initialPage = null)
     {
@@ -59,7 +66,12 @@ public partial class MainWindow : Window
         _state.PropertyChanged += State_PropertyChanged;
         _state.ToastRequested += ShowToast;
         PreviewKeyDown += MainWindow_PreviewKeyDown;
-        SizeChanged += (_, _) => ApplyRoundedRegion();
+        SizeChanged += (_, _) =>
+        {
+            ApplyRoundedRegion();
+            UpdateNavLens(animate: false);
+        };
+        PrepareNavLens();
         AccountMenuPanel.SizeChanged += (_, _) =>
         {
             ApplyPanelClip(AccountMenuPanel, 16);
@@ -73,6 +85,8 @@ public partial class MainWindow : Window
             Navigate(_initialPage, force: true, animate: false);
             UpdateGameRunningChip();
             UpdateThemeToggle();
+            Dispatcher.BeginInvoke(new Action(() => UpdateNavLens(animate: false)),
+                DispatcherPriority.Loaded);
             PlayStartupAnimation();
         };
     }
@@ -129,7 +143,7 @@ public partial class MainWindow : Window
         GameRunningChip.Visibility = _state.IsGameRunning ? Visibility.Visible : Visibility.Collapsed;
     }
 
-    private void Navigate(string key, bool force = false, bool animate = true)
+    private void Navigate(string key, bool force = false, bool animate = true, bool fromNav = false)
     {
         if (!force && string.Equals(_currentPage, key, StringComparison.OrdinalIgnoreCase))
         {
@@ -176,6 +190,12 @@ public partial class MainWindow : Window
         finally
         {
             _navigating = false;
+        }
+
+        if (!fromNav)
+        {
+            Dispatcher.BeginInvoke(new Action(() => UpdateNavLens(animate: true)),
+                DispatcherPriority.Loaded);
         }
     }
 
@@ -344,18 +364,120 @@ public partial class MainWindow : Window
             _ => NavHome
         };
         target.IsChecked = true;
+        _navLensTarget = target;
     }
-
-
 
     private void Nav_Checked(object sender, RoutedEventArgs e)
     {
-        if (_navigating || sender is not RadioButton { IsChecked: true, Tag: string key })
+        if (_navigating || sender is not RadioButton { IsChecked: true, Tag: string key } nav)
         {
             return;
         }
 
-        Navigate(key);
+        // RadioButton group state can briefly contain the previous checked item.
+        // Anchor the lens to the item that actually raised this event.
+        _navLensTarget = nav;
+        UpdateNavLens(animate: true);
+        Navigate(key, fromNav: true);
+    }
+
+    private RadioButton[] NavItems() =>
+        new[] { NavHome, NavInstances, NavDownload, NavModpacks, NavMods, NavSaves, NavRoom, NavServers, NavSettings };
+
+    private void PrepareNavLens()
+    {
+        foreach (var item in NavItems())
+        {
+            item.PreviewMouseLeftButtonDown += NavItem_PreviewMouseDown;
+            item.PreviewMouseLeftButtonUp += NavItem_PreviewMouseUp;
+            item.MouseLeave += (_, _) => AnimateNavLensPress(false);
+        }
+    }
+
+    private void NavItem_PreviewMouseDown(object sender, MouseButtonEventArgs e) =>
+        AnimateNavLensPress(true);
+
+    private void NavItem_PreviewMouseUp(object sender, MouseButtonEventArgs e) =>
+        AnimateNavLensPress(false);
+
+    private void AnimateNavLensPress(bool pressed)
+    {
+        if (NavLensScale is null) return;
+        var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
+        var scale = pressed ? 1.04 : 1.0;
+        var duration = pressed ? TimeSpan.FromMilliseconds(90) : TimeSpan.FromMilliseconds(180);
+        NavLensScale.BeginAnimation(ScaleTransform.ScaleXProperty,
+            new DoubleAnimation(scale, duration) { EasingFunction = ease });
+        NavLensScale.BeginAnimation(ScaleTransform.ScaleYProperty,
+            new DoubleAnimation(pressed ? 1.06 : 1.0, duration) { EasingFunction = ease });
+    }
+
+    private void UpdateNavLens(bool animate)
+    {
+        if (NavLiquidLens is null || NavLensLayer is null) return;
+        var target = _navLensTarget is { IsChecked: true }
+            ? _navLensTarget
+            : NavItems().FirstOrDefault(item => item.IsChecked == true);
+        if (target is null || !target.IsVisible) return;
+        NavLiquidLens.Opacity = 1;
+        if (NavLensLayer.Parent is not Visual ancestor) return;
+        var point = target.TransformToAncestor(ancestor).Transform(new Point(0, 0));
+        var x = point.X + (target.ActualWidth - NavLiquidLens.Width) / 2;
+        var y = point.Y + (target.ActualHeight - NavLiquidLens.Height) / 2;
+        _navLensTargetX = x;
+        _navLensTargetY = y;
+        if (!animate || !_navLensReady || NavLensTranslate is null)
+        {
+            StopNavLensLoop();
+            if (NavLensTranslate is not null)
+            {
+                NavLensTranslate.BeginAnimation(TranslateTransform.XProperty, null);
+                NavLensTranslate.BeginAnimation(TranslateTransform.YProperty, null);
+                NavLensTranslate.X = x;
+                NavLensTranslate.Y = y;
+            }
+
+            _navLensReady = true;
+            return;
+        }
+
+        if (_navLensLoopActive) return;
+        _navLensLoopActive = true;
+        _navLensClock.Restart();
+        _navLensLastFrame = TimeSpan.Zero;
+        CompositionTarget.Rendering += OnNavLensFrame;
+    }
+
+    private void OnNavLensFrame(object? sender, EventArgs e)
+    {
+        if (!_navLensLoopActive || NavLensTranslate is null) return;
+        var now = _navLensClock.Elapsed;
+        var dt = Math.Clamp((now - _navLensLastFrame).TotalSeconds, 0.001, 0.05);
+        _navLensLastFrame = now;
+
+        // Critically damped exponential follow. New clicks only change the
+        // target, so rapid navigation keeps moving toward the newest item
+        // instead of restarting conflicting animations.
+        var factor = 1 - Math.Exp(-dt * 18);
+        var x = NavLensTranslate.X + (_navLensTargetX - NavLensTranslate.X) * factor;
+        var y = NavLensTranslate.Y + (_navLensTargetY - NavLensTranslate.Y) * factor;
+        NavLensTranslate.X = x;
+        NavLensTranslate.Y = y;
+
+        if (Math.Abs(_navLensTargetX - x) < 0.2 && Math.Abs(_navLensTargetY - y) < 0.2)
+        {
+            NavLensTranslate.X = _navLensTargetX;
+            NavLensTranslate.Y = _navLensTargetY;
+            StopNavLensLoop();
+        }
+    }
+
+    private void StopNavLensLoop()
+    {
+        if (!_navLensLoopActive) return;
+        _navLensLoopActive = false;
+        CompositionTarget.Rendering -= OnNavLensFrame;
+        _navLensClock.Stop();
     }
 
     private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -618,7 +740,9 @@ public partial class MainWindow : Window
         UpdateThemeToggle();
         try
         {
-            ApplyDwmBorder(new WindowInteropHelper(this).Handle);
+            var handle = new WindowInteropHelper(this).Handle;
+            ApplyDwmBorder(handle);
+            ApplyAcrylic(handle, ThemeService.IsDark);
         }
         catch
         {
@@ -810,6 +934,63 @@ public partial class MainWindow : Window
         }
     }
 
+    private enum AccentState
+    {
+        Disabled = 0,
+        EnableBlurBehind = 3,
+        EnableAcrylicBlurBehind = 4
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct AccentPolicy
+    {
+        public AccentState AccentState;
+        public int AccentFlags;
+        public int GradientColor;
+        public int AnimationId;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct WindowCompositionAttributeData
+    {
+        public int Attribute;
+        public IntPtr Data;
+        public int SizeOfData;
+    }
+
+    private static void ApplyAcrylic(IntPtr hwnd, bool dark)
+    {
+        try
+        {
+            var policy = new AccentPolicy
+            {
+                AccentState = AccentState.EnableAcrylicBlurBehind,
+                AccentFlags = 2,
+                GradientColor = dark ? unchecked((int)0x99101014) : unchecked((int)0x99F4F4F8)
+            };
+            var size = Marshal.SizeOf<AccentPolicy>();
+            var pointer = Marshal.AllocHGlobal(size);
+            try
+            {
+                Marshal.StructureToPtr(policy, pointer, false);
+                var data = new WindowCompositionAttributeData
+                {
+                    Attribute = 19,
+                    Data = pointer,
+                    SizeOfData = size
+                };
+                SetWindowCompositionAttribute(hwnd, ref data);
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(pointer);
+            }
+        }
+        catch
+        {
+        }
+    }
+
     private void Window_SourceInitialized(object? sender, EventArgs e)
     {
         try
@@ -820,6 +1001,7 @@ public partial class MainWindow : Window
             var corner = 2;
             DwmSetWindowAttribute(handle, 33, ref corner, sizeof(int));
             ApplyDwmBorder(handle);
+            ApplyAcrylic(handle, ThemeService.IsDark);
             ApplyRoundedRegion();
         }
         catch
@@ -961,6 +1143,10 @@ public partial class MainWindow : Window
 
     [DllImport("dwmapi.dll")]
     private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int size);
+
+    [DllImport("user32.dll")]
+    private static extern int SetWindowCompositionAttribute(IntPtr hwnd,
+        ref WindowCompositionAttributeData data);
 
     [DllImport("gdi32.dll")]
     private static extern IntPtr CreateRoundRectRgn(int left, int top, int right, int bottom,
