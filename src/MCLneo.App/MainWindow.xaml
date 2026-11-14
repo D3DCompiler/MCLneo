@@ -15,7 +15,7 @@
                             CornerRadius="0" NonClientFrameEdges="None" UseAeroCaptionButtons="False"/>
     </shell:WindowChrome.WindowChrome>
 
-    <Border x:Name="WindowRoot" Background="Transparent" BorderBrush="{DynamicResource BorderStrongBrush}"
+    <Border x:Name="WindowRoot" Background="{DynamicResource BgBrush}" BorderBrush="{DynamicResource BorderStrongBrush}"
             BorderThickness="0" CornerRadius="10" ClipToBounds="True">
         <Grid>
             <Grid.ColumnDefinitions>
@@ -24,9 +24,8 @@
             </Grid.ColumnDefinitions>
 
             <!-- Compact navigation rail -->
-            <Border x:Name="SidebarRoot" Grid.Column="0" Background="{DynamicResource SidebarGlassBrush}"
-                    BorderBrush="{DynamicResource NavLensBorderBrush}" BorderThickness="0,0,1,0"
-                    ClipToBounds="True">
+            <Border x:Name="SidebarRoot" Grid.Column="0" Background="{DynamicResource BgBrush}"
+                    BorderThickness="0" ClipToBounds="True">
                 <Grid>
                     
                     <Grid.RowDefinitions>
@@ -34,16 +33,7 @@
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
-                    <Border Grid.RowSpan="3" IsHitTestVisible="False" ClipToBounds="True" CacheMode="BitmapCache">
-                        <Grid>
-                            <Ellipse Width="190" Height="300" Fill="{DynamicResource NavAuroraBrush}"
-                                     HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-78,-70,0,0"
-                                     Opacity="0.48"/>
-                            <Ellipse Width="170" Height="260" Fill="{DynamicResource NavAuroraBrush}"
-                                     HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="-82,0,0,-55"
-                                     Opacity="0.24"/>
-                        </Grid>
-                    </Border>
+
                     <Canvas x:Name="NavLensLayer" Grid.RowSpan="3" ClipToBounds="True"
                             IsHitTestVisible="False" Panel.ZIndex="10">
                         <Border x:Name="NavLiquidLens" Width="68" Height="50" CornerRadius="18"
@@ -178,7 +168,7 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <Border Grid.Row="0" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1"
+                <Border Grid.Row="0" BorderThickness="0"
                         Background="{DynamicResource TitleBarBrush}" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
                     <Grid Margin="24,0,10,0">
                         <Grid.ColumnDefinitions>

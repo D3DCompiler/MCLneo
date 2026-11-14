@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using MCLneo.Core.Models;
 using MCLneo.Core.Servers;
 
 namespace MCLneo.App.Views;
@@ -9,13 +10,32 @@ public sealed class ServerRow : INotifyPropertyChanged
 {
     private ServerStatus? _status;
     private IReadOnlyList<string> _players = Array.Empty<string>();
+    private GameInstance? _selectedInstance;
 
-    public ServerRow(ServerEntry entry)
+    public ServerRow(ServerEntry entry, GameInstance owner, IReadOnlyList<GameInstance> instances)
     {
         Entry = entry;
+        Owner = owner;
+        Instances = instances;
+        _selectedInstance = owner;
     }
 
     public ServerEntry Entry { get; }
+    public GameInstance Owner { get; }
+    public IReadOnlyList<GameInstance> Instances { get; }
+    public GameInstance? SelectedInstance
+    {
+        get => _selectedInstance;
+        set
+        {
+            if (!ReferenceEquals(_selectedInstance, value))
+            {
+                _selectedInstance = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
     public string Name => Entry.Name;
     public string Ip => Entry.Ip;
     public IReadOnlyList<string> Players => _players;

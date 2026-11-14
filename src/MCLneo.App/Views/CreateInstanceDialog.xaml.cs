@@ -24,6 +24,7 @@ public partial class CreateInstanceDialog : Window
     private readonly List<string> _selectedMods = new();
     private readonly List<ModrinthProject> _selectedProjects = new();
     private CancellationTokenSource? _cts;
+    private CancellationTokenSource? _loaderVersionsCts;
 
     public CreateInstanceDialog(AppServices services, AppState state, string? preselectedVersion = null)
     {
@@ -127,6 +128,7 @@ public partial class CreateInstanceDialog : Window
         {
             _selectedProjects.Clear();
             UpdateModsSummary();
+            _ = RefreshLoaderVersionsAsync();
         }
     }
 
@@ -180,11 +182,71 @@ public partial class CreateInstanceDialog : Window
 
         if (!modded)
         {
+            LoaderVersionBox.Items.Clear();
             LoaderVersionBox.Text = "";
+            LoaderVersionHint.Text = "原版游戏不需要加载器版本。";
         }
 
         _selectedProjects.Clear();
         UpdateModsSummary();
+        _ = RefreshLoaderVersionsAsync();
+    }
+
+    private async Task RefreshLoaderVersionsAsync()
+    {
+        if (LoaderVersionBox is null || VersionBox is null) return;
+        var version = VersionBox.SelectedItem as MinecraftVersionInfo;
+        var loader = SelectedLoader;
+        if (version is null || loader == LoaderKind.Vanilla || _installing)
+        {
+            return;
+        }
+
+        _loaderVersionsCts?.Cancel();
+        var cts = new CancellationTokenSource();
+        _loaderVersionsCts = cts;
+        LoaderVersionHint.Text = $"正在查询 Minecraft {version.Id} 可用的 {loader} 版本…";
+        try
+        {
+            var list = loader switch
+            {
+                LoaderKind.Fabric => await _services.LoaderInstaller.GetFabricVersionsAsync(version.Id, cts.Token),
+                LoaderKind.Quilt => await _services.LoaderInstaller.GetQuiltVersionsAsync(version.Id, cts.Token),
+                LoaderKind.Forge => await _services.LoaderInstaller.GetForgeVersionsAsync(version.Id, cts.Token),
+                LoaderKind.NeoForge => await _services.LoaderInstaller.GetNeoForgeVersionsAsync(version.Id, cts.Token),
+                _ => Array.Empty<LoaderVersionInfo>()
+            };
+            if (cts.IsCancellationRequested || !ReferenceEquals(_loaderVersionsCts, cts)) return;
+
+            LoaderVersionBox.Items.Clear();
+            foreach (var item in list)
+            {
+                LoaderVersionBox.Items.Add(item);
+            }
+
+            var recommended = list.FirstOrDefault(v => v.Recommended) ?? list.FirstOrDefault();
+            LoaderVersionBox.SelectedItem = recommended;
+            LoaderVersionBox.Text = recommended?.Version ?? "";
+            LoaderVersionHint.Text = list.Count == 0
+                ? $"没有找到适用于 Minecraft {version.Id} 的 {loader} 版本。"
+                : $"Minecraft {version.Id} 推荐 {loader} {recommended!.Version}；也可以选择其他版本或直接输入。";
+        }
+        catch (Exception ex)
+        {
+            if (!cts.IsCancellationRequested)
+            {
+                LoaderVersionHint.Text = $"加载器版本查询失败：{ex.Message}";
+            }
+        }
+        finally
+        {
+            if (ReferenceEquals(_loaderVersionsCts, cts))
+            {
+                _loaderVersionsCts = null;
+            }
+
+            cts.Dispose();
+        }
     }
 
     private void AddMods_Click(object sender, RoutedEventArgs e)

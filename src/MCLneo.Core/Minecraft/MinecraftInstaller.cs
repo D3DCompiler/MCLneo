@@ -101,9 +101,65 @@ public sealed class MinecraftInstaller
         instance.EnsureDirectories();
         await SaveMetadataAsync(instance, ct).ConfigureAwait(false);
 
+        Report(progress, "校验游戏文件", 0.97, "检查运行库与资源完整性");
+        await VerifyResourcesAsync(instance, ct).ConfigureAwait(false);
         Report(progress, "安装完成", 1, $"{instance.Name} 已准备好");
         _log.Info($"游戏安装完成：{instance.Name}（{instance.Id}，{instance.Subtitle}）");
         return instance;
+    }
+
+    private async Task VerifyResourcesAsync(GameInstance instance, CancellationToken ct)
+    {
+        var source = _settings.Current.DownloadSource;
+        var effective = await VersionResolver.LoadEffectiveAsync(instance, ct).ConfigureAwait(false);
+        var missing = new List<string>();
+        foreach (var library in LibraryResolver.Resolve(effective, source))
+        {
+            var path = LibraryResolver.GetLibraryPath(_settings.Current.GameRoot, library);
+            if (!File.Exists(path))
+            {
+                missing.Add(Path.GetFileName(path));
+            }
+        }
+
+        var assetsId = effective["assetIndex"]?["id"]?.GetValue<string>()
+                       ?? effective["assets"]?.GetValue<string>();
+        if (!string.IsNullOrWhiteSpace(assetsId) && assetsId != "legacy")
+        {
+            var indexPath = Path.Combine(_settings.Current.GameRoot, "assets", "indexes", assetsId + ".json");
+            if (!File.Exists(indexPath))
+            {
+                missing.Add($"assets/indexes/{assetsId}.json");
+            }
+            else
+            {
+                try
+                {
+                    var index = JsonNode.Parse(await File.ReadAllTextAsync(indexPath, ct).ConfigureAwait(false));
+                    if (index?["objects"] is JsonObject objects)
+                    {
+                        foreach (var (_, node) in objects)
+                        {
+                            var hash = node?["hash"]?.GetValue<string>();
+                            if (string.IsNullOrWhiteSpace(hash) || hash.Length < 2) continue;
+                            var path = Path.Combine(_settings.Current.GameRoot, "assets", "objects",
+                                hash[..2], hash);
+                            if (!File.Exists(path)) missing.Add($"assets/objects/{hash}");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    missing.Add($"资源索引损坏：{ex.Message}");
+                }
+            }
+        }
+
+        if (missing.Count > 0)
+        {
+            var preview = string.Join("、", missing.Take(5));
+            throw new InvalidOperationException($"游戏文件校验失败，缺失 {missing.Count} 个文件：{preview}");
+        }
     }
 
     /// <summary>Installs the shared vanilla base version into versions/&lt;id&gt;.</summary>
@@ -244,12 +300,19 @@ public sealed class MinecraftInstaller
             .ToList();
         await DownloadWithProgressAsync(items, "校验运行库", 0.5, 0.92, progress, ct).ConfigureAwait(false);
 
-        var assetsId = effective["assetIndex"]?["id"]?.GetValue<string>()
-                       ?? effective["assets"]?.GetValue<string>();
-        if (!string.IsNullOrWhiteSpace(assetsId) && assetsId != "legacy" &&
-            !File.Exists(Path.Combine(_settings.Current.GameRoot, "assets", "indexes", assetsId + ".json")))
+        if (effective["assetIndex"] is JsonObject repairAssetIndex)
         {
-            throw new InvalidOperationException($"资源索引 {assetsId} 缺失，请重新安装基础版本");
+            await EnsureAssetsAsync(repairAssetIndex, source,
+                new ScaledProgress(progress, 0.92, 0.99), ct).ConfigureAwait(false);
+        }
+        else
+        {
+            var assetsId = effective["assets"]?.GetValue<string>();
+            if (!string.IsNullOrWhiteSpace(assetsId) && assetsId != "legacy" &&
+                !File.Exists(Path.Combine(_settings.Current.GameRoot, "assets", "indexes", assetsId + ".json")))
+            {
+                throw new InvalidOperationException($"资源索引 {assetsId} 缺失，请重新安装基础版本");
+            }
         }
 
         Report(progress, "修复完成", 1, instance.Name);
@@ -374,12 +437,14 @@ public sealed class MinecraftInstaller
             }
 
             var relative = Path.Combine(hash[..2], hash);
+            var officialAssetUrl = $"https://resources.download.minecraft.net/{hash[..2]}/{hash}";
             items.Add(new DownloadItem(
-                source.Rewrite($"https://resources.download.minecraft.net/{hash[..2]}/{hash}"),
+                source.Rewrite(officialAssetUrl),
                 Path.Combine(_settings.Current.GameRoot, "assets", "objects", relative),
                 hash,
                 obj["size"]?.GetValue<long>() ?? -1,
-                name));
+                name,
+                officialAssetUrl));
         }
 
         await DownloadWithProgressAsync(items, "下载游戏资源", 0.08, 0.95, progress, ct)
@@ -451,7 +516,27 @@ public sealed class MinecraftInstaller
             return true;
         }
 
-        return File.Exists(Path.Combine(_settings.Current.GameRoot, "assets", "indexes", assetId + ".json"));
+        var indexPath = Path.Combine(_settings.Current.GameRoot, "assets", "indexes", assetId + ".json");
+        if (!File.Exists(indexPath)) return false;
+        try
+        {
+            var index = JsonNode.Parse(File.ReadAllText(indexPath));
+            if (index?["objects"] is not JsonObject objects) return true;
+            foreach (var (_, node) in objects)
+            {
+                var hash = node?["hash"]?.GetValue<string>();
+                if (string.IsNullOrWhiteSpace(hash) || hash.Length < 2) continue;
+                var objectPath = Path.Combine(_settings.Current.GameRoot, "assets", "objects",
+                    hash[..2], hash);
+                if (!File.Exists(objectPath)) return false;
+            }
+
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     private static void TouchBaseMarker(string versionDir)

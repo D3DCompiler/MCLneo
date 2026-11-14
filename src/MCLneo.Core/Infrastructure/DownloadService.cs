@@ -9,7 +9,8 @@ public sealed record DownloadItem(
     string Destination,
     string? Sha1 = null,
     long Size = -1,
-    string? Label = null);
+    string? Label = null,
+    string? FallbackUrl = null);
 
 public sealed record DownloadProgress(
     int Completed,
@@ -137,7 +138,10 @@ public sealed class DownloadService
             {
                 try
                 {
-                    using var response = await _http.SendWithRetryAsync(item.Url, ct).ConfigureAwait(false);
+                    var requestUrl = attempt > 1 && !string.IsNullOrWhiteSpace(item.FallbackUrl)
+                        ? item.FallbackUrl
+                        : item.Url;
+                    using var response = await _http.SendWithRetryAsync(requestUrl, ct).ConfigureAwait(false);
                     var expected = response.Content.Headers.ContentLength ?? item.Size;
                     await using var input = await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
                     string actualHash;

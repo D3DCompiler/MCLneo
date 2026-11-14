@@ -79,6 +79,7 @@ internal static class Program
         Run("第三方认证地址与 NeoForge 版本映射", TestAccountHelpers);
         Run("路径越界保护", TestPathSafety);
         Run("本地玩家日志解析", TestLocalPlayerLog);
+        Run("LWJGL 主库与 natives 同时入类路径", TestLwjglClasspath);
         await RunAsync("服务器状态协议", TestServerStatusProtocol);
         await RunAsync("IPv6 直连中转", TestIpv6DirectRelay);
 
@@ -682,6 +683,20 @@ internal static class Program
         {
             http.Dispose();
         }
+    }
+
+    private static void TestLwjglClasspath()
+    {
+        var json = """
+                   {"libraries":[{"name":"org.lwjgl:lwjgl:3.2.2","natives":{"windows":"natives-windows"},"downloads":{"artifact":{"path":"org/lwjgl/lwjgl/3.2.2/lwjgl-3.2.2.jar","url":"https://libraries.minecraft.net/org/lwjgl/lwjgl/3.2.2/lwjgl-3.2.2.jar","sha1":"0123456789012345678901234567890123456789","size":1},"classifiers":{"natives-windows":{"path":"org/lwjgl/lwjgl/3.2.2/lwjgl-3.2.2-natives-windows.jar","url":"https://libraries.minecraft.net/org/lwjgl/lwjgl/3.2.2/lwjgl-3.2.2-natives-windows.jar","sha1":"0123456789012345678901234567890123456789","size":1}}}}]}
+                   """;
+        var version = JsonNode.Parse(json)!.AsObject();
+        var libraries = LibraryResolver.Resolve(version, DownloadSource.Official);
+        Assert(libraries.Count == 2, "LWJGL 应同时包含主库和 natives");
+        Assert(libraries.Any(l => !l.IsNative && l.RelativePath.EndsWith("lwjgl-3.2.2.jar")),
+            "LWJGL 主库未加入类路径");
+        Assert(libraries.Any(l => l.IsNative && l.RelativePath.EndsWith("natives-windows.jar")),
+            "LWJGL natives 未加入");
     }
 
     private static void TestLocalPlayerLog()

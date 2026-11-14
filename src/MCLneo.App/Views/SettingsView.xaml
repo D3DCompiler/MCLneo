@@ -104,7 +104,13 @@
                         </Grid.ColumnDefinitions>
                         <StackPanel>
                             <TextBlock Text="Java 运行时" Style="{StaticResource SectionLabel}" Margin="1,0,0,7"/>
-                            <ComboBox x:Name="JavaBox" Height="40" DisplayMemberPath="Display"/>
+                            <ComboBox x:Name="JavaBox" Height="40">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Display}"/>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
                             <TextBlock Text="留空会自动检测；启动时如缺少所需版本，会下载 JRE。"
                                        Style="{StaticResource Caption}" Margin="2,6,0,0"/>
                         </StackPanel>
@@ -164,7 +170,13 @@
                         <StackPanel Grid.Column="2">
                             <TextBlock Text="主题色" Style="{StaticResource SectionLabel}" Margin="1,0,0,7"/>
                             <ComboBox x:Name="ThemeBox" Height="40"
-                                      SelectionChanged="Appearance_Changed"/>
+                                      SelectionChanged="Appearance_Changed">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Name}"/>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
                         </StackPanel>
                         <StackPanel Grid.Column="4">
                             <TextBlock Text="帮助与更新" Style="{StaticResource SectionLabel}" Margin="1,0,0,7"/>

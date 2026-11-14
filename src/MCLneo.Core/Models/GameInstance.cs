@@ -22,6 +22,9 @@ public sealed class GameInstance
     public string ClientJarPath => Path.Combine(Directory, Id + ".jar");
 
     [JsonIgnore]
+    public string PickerLabel => $"{Name} · {Subtitle}";
+
+    [JsonIgnore]
     public string ModsDirectory => Path.Combine(Directory, "mods");
 
     [JsonIgnore]

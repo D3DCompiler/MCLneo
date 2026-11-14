@@ -93,8 +93,8 @@ public partial class MainWindow : Window
 
     private void PrepareAnimationTransforms()
     {
-        _rootScale = new ScaleTransform(0.985, 0.985);
-        _rootTranslate = new TranslateTransform(0, 10);
+        _rootScale = new ScaleTransform(1, 1);
+        _rootTranslate = new TranslateTransform(0, 0);
         WindowRoot.RenderTransformOrigin = new System.Windows.Point(0.5, 0.5);
         WindowRoot.RenderTransform = new TransformGroup
         {
@@ -102,7 +102,7 @@ public partial class MainWindow : Window
         };
         WindowRoot.Opacity = 1;
 
-        _sidebarTranslate = new TranslateTransform(-18, 0);
+        _sidebarTranslate = new TranslateTransform(0, 0);
         SidebarRoot.RenderTransform = _sidebarTranslate;
         SidebarRoot.Opacity = 1;
 
@@ -110,9 +110,10 @@ public partial class MainWindow : Window
         PageTransitionRoot.RenderTransform = _contentTranslate;
         PageTransitionRoot.Opacity = 1;
 
-        // Start hidden; the Loaded handler plays the reveal.
-        WindowRoot.Opacity = 0;
-        SidebarRoot.Opacity = 0;
+        // Keep the window and navigation opaque during the reveal so a light
+        // theme never flashes a dark acrylic base behind the sidebar.
+        WindowRoot.Opacity = 1;
+        SidebarRoot.Opacity = 1;
         PageTransitionRoot.Opacity = 0;
     }
 
@@ -278,26 +279,6 @@ public partial class MainWindow : Window
         _contentTranslate.Y = 0;
 
         var ease = new QuinticEase { EasingMode = EasingMode.EaseOut };
-        WindowRoot.BeginAnimation(OpacityProperty,
-            new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(260)) { EasingFunction = ease });
-        _rootScale.BeginAnimation(ScaleTransform.ScaleXProperty,
-            new DoubleAnimation(0.985, 1, TimeSpan.FromMilliseconds(430)) { EasingFunction = ease });
-        _rootScale.BeginAnimation(ScaleTransform.ScaleYProperty,
-            new DoubleAnimation(0.985, 1, TimeSpan.FromMilliseconds(430)) { EasingFunction = ease });
-        _rootTranslate.BeginAnimation(TranslateTransform.YProperty,
-            new DoubleAnimation(10, 0, TimeSpan.FromMilliseconds(430)) { EasingFunction = ease });
-        SidebarRoot.BeginAnimation(OpacityProperty,
-            new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(300))
-            {
-                BeginTime = TimeSpan.FromMilliseconds(60),
-                EasingFunction = ease
-            });
-        _sidebarTranslate.BeginAnimation(TranslateTransform.XProperty,
-            new DoubleAnimation(-18, 0, TimeSpan.FromMilliseconds(420))
-            {
-                BeginTime = TimeSpan.FromMilliseconds(60),
-                EasingFunction = ease
-            });
         PageTransitionRoot.BeginAnimation(OpacityProperty,
             new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(360))
             {
@@ -721,14 +702,9 @@ public partial class MainWindow : Window
     {
         try
         {
-            if (FindResource("BgBrush") is SolidColorBrush background)
-            {
-                // COLORREF is 0x00BBGGRR. Matching the window border to the
-                // theme hides the remaining rectangular 1px DWM frame.
-                var color = background.Color;
-                var colorRef = color.R | color.G << 8 | color.B << 16;
-                DwmSetWindowAttribute(handle, 34, ref colorRef, sizeof(int));
-            }
+            // DWMWA_COLOR_NONE = 0xFFFFFFFE: remove the DWM border entirely.
+            var colorRef = unchecked((int)0xFFFFFFFE);
+            DwmSetWindowAttribute(handle, 34, ref colorRef, sizeof(int));
         }
         catch
         {
@@ -966,7 +942,7 @@ public partial class MainWindow : Window
             {
                 AccentState = AccentState.EnableAcrylicBlurBehind,
                 AccentFlags = 2,
-                GradientColor = dark ? unchecked((int)0x99101014) : unchecked((int)0x99F4F4F8)
+                GradientColor = dark ? unchecked((int)0x99101014) : unchecked((int)0xE6FDFAFA)
             };
             var size = Marshal.SizeOf<AccentPolicy>();
             var pointer = Marshal.AllocHGlobal(size);

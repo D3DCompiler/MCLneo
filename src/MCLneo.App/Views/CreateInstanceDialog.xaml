@@ -142,10 +142,16 @@
 
                     <TextBlock x:Name="LoaderVersionLabel" Text="加载器版本（可选）" Style="{StaticResource SectionLabel}"
                                Margin="1,18,0,7"/>
-                    <TextBox x:Name="LoaderVersionBox" Height="40" IsEnabled="False"
-                             Foreground="{DynamicResource TextBrush}"/>
-                    <TextBlock Text="留空会使用该 Minecraft 版本对应的最新稳定加载器。"
-                               Style="{StaticResource Caption}" Margin="2,6,0,0"/>
+                    <ComboBox x:Name="LoaderVersionBox" Height="40" IsEnabled="False" IsEditable="True"
+                              ToolTip="可直接选择或输入加载器版本">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Version}"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <TextBlock x:Name="LoaderVersionHint" Text="留空会使用该 Minecraft 版本对应的最新稳定加载器。"
+                               Style="{StaticResource Caption}" Margin="2,6,0,0" TextWrapping="Wrap"/>
 
                     <Border x:Name="ErrorPanel" Visibility="Collapsed" Background="{DynamicResource DangerSoftBrush}" BorderBrush="{DynamicResource DangerBorderBrush}"
                             BorderThickness="1" CornerRadius="10" Padding="12" Margin="0,18,0,0">

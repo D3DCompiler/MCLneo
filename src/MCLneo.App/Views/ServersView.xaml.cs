@@ -15,10 +15,8 @@ public partial class ServersView : UserControl
     private readonly AppState _state;
     private readonly ObservableCollection<ServerRow> _rows = new();
     private readonly DispatcherTimer _autoRefresh;
-    private bool _initialized;
     private bool _pinging;
     private CancellationTokenSource? _pingCts;
-    private List<ServerEntry> _entries = new();
 
     public ServersView(AppServices services, AppState state)
     {
@@ -26,7 +24,6 @@ public partial class ServersView : UserControl
         _services = services;
         _state = state;
         DataContext = state;
-        _initialized = true;
         ServerList.ItemsSource = _rows;
         _autoRefresh = new DispatcherTimer { Interval = TimeSpan.FromSeconds(30) };
         _autoRefresh.Tick += (_, _) => _ = PingRowsAsync();
@@ -41,48 +38,45 @@ public partial class ServersView : UserControl
             CancelPings();
         };
         _state.PropertyChanged += State_PropertyChanged;
+        _state.Instances.CollectionChanged += (_, _) =>
+            Dispatcher.BeginInvoke(new Action(() => RefreshServerUi(load: true)));
     }
 
     private void State_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(AppState.SelectedInstance))
+        if (e.PropertyName == nameof(AppState.Instances))
         {
             Dispatcher.BeginInvoke(new Action(() => RefreshServerUi(load: true)));
         }
     }
 
-    private void InstanceBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (_initialized) RefreshServerUi(load: true);
-    }
-
     private void RefreshServerUi(bool load)
     {
-        var instance = _state.SelectedInstance;
-        if (instance is null)
+        if (_state.Instances.Count == 0)
         {
             NoInstancePanel.Visibility = Visibility.Visible;
             ServerList.Visibility = Visibility.Collapsed;
             EmptyPanel.Visibility = Visibility.Collapsed;
-            HintText.Text = "未选择游戏";
             return;
         }
 
         NoInstancePanel.Visibility = Visibility.Collapsed;
         ServerList.Visibility = Visibility.Visible;
-        HintText.Text = $"servers.dat：{ServerListService.GetPath(instance)}";
-        if (load) LoadServers(instance);
+        if (load) LoadServers();
     }
 
-    private void LoadServers(GameInstance instance)
+    private void LoadServers()
     {
         try
         {
-            _entries = ServerListService.Read(instance).ToList();
             _rows.Clear();
-            foreach (var entry in _entries)
+            var instances = _state.Instances.ToList();
+            foreach (var instance in instances)
             {
-                _rows.Add(new ServerRow(entry));
+                foreach (var entry in ServerListService.Read(instance))
+                {
+                    _rows.Add(new ServerRow(entry, instance, instances));
+                }
             }
 
             EmptyPanel.Visibility = _rows.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -136,8 +130,18 @@ public partial class ServersView : UserControl
 
     private void Refresh_Click(object sender, RoutedEventArgs e)
     {
-        var instance = _state.SelectedInstance;
-        if (instance is not null) LoadServers(instance);
+        LoadServers();
+    }
+
+    private void VersionBox_Loaded(object sender, RoutedEventArgs e)
+    {
+        if (sender is not ComboBox { DataContext: ServerRow row } combo) return;
+        combo.ItemsSource = row.Instances;
+        var selected = row.Instances.FirstOrDefault(i => i.Id == row.SelectedInstance?.Id)
+                       ?? row.Instances.FirstOrDefault(i => i.Id == row.Owner.Id)
+                       ?? row.Instances.FirstOrDefault();
+        combo.SelectedItem = selected;
+        row.SelectedInstance = selected;
     }
 
     private async void RefreshStatus_Click(object sender, RoutedEventArgs e)
@@ -151,10 +155,10 @@ public partial class ServersView : UserControl
 
     private void Add_Click(object sender, RoutedEventArgs e)
     {
-        var instance = _state.SelectedInstance;
+        var instance = _state.SelectedInstance ?? _state.Instances.FirstOrDefault();
         if (instance is null)
         {
-            _state.Notify("请先选择一个游戏", true);
+            _state.Notify("请先导入一个游戏", true);
             return;
         }
 
@@ -163,29 +167,31 @@ public partial class ServersView : UserControl
         var address = InputDialog.Show(Window.GetWindow(this), "添加服务器", "服务器地址，例如 play.example.com:25565",
             "localhost:25565", ValidateAddress);
         if (string.IsNullOrWhiteSpace(address)) return;
-        _entries.Add(new ServerEntry(name.Trim(), address.Trim()));
-        Save(instance);
+        var entries = ServerListService.Read(instance).ToList();
+        entries.Add(new ServerEntry(name.Trim(), address.Trim()));
+        Save(instance, entries);
     }
 
     private void Edit_Click(object sender, RoutedEventArgs e)
     {
-        var instance = _state.SelectedInstance;
-        if (instance is null || sender is not FrameworkElement { Tag: ServerRow row }) return;
+        if (sender is not FrameworkElement { Tag: ServerRow row }) return;
+        var instance = row.Owner;
+        var entries = ServerListService.Read(instance).ToList();
         var entry = row.Entry;
-        var index = _entries.IndexOf(entry);
+        var index = entries.IndexOf(entry);
         if (index < 0) return;
         var name = InputDialog.Show(Window.GetWindow(this), "编辑服务器", "服务器显示名称", entry.Name);
         if (string.IsNullOrWhiteSpace(name)) return;
         var address = InputDialog.Show(Window.GetWindow(this), "编辑服务器", "服务器地址", entry.Ip, ValidateAddress);
         if (string.IsNullOrWhiteSpace(address)) return;
-        _entries[index] = entry with { Name = name.Trim(), Ip = address.Trim() };
-        Save(instance);
+        entries[index] = entry with { Name = name.Trim(), Ip = address.Trim() };
+        Save(instance, entries);
     }
 
     private void Delete_Click(object sender, RoutedEventArgs e)
     {
-        var instance = _state.SelectedInstance;
-        if (instance is null || sender is not FrameworkElement { Tag: ServerRow row }) return;
+        if (sender is not FrameworkElement { Tag: ServerRow row }) return;
+        var instance = row.Owner;
         var entry = row.Entry;
         if (!MessageDialog.Confirm(Window.GetWindow(this), "删除服务器", $"确定删除「{entry.Name}」吗？", "删除",
                 danger: true))
@@ -193,25 +199,27 @@ public partial class ServersView : UserControl
             return;
         }
 
-        _entries.Remove(entry);
-        Save(instance);
+        var entries = ServerListService.Read(instance).ToList();
+        entries.RemoveAll(e => string.Equals(e.Name, entry.Name, StringComparison.Ordinal) &&
+                               string.Equals(e.Ip, entry.Ip, StringComparison.OrdinalIgnoreCase));
+        Save(instance, entries);
     }
 
     private async void Connect_Click(object sender, RoutedEventArgs e)
     {
-        var instance = _state.SelectedInstance;
-        if (instance is null || sender is not FrameworkElement { Tag: ServerRow row }) return;
+        if (sender is not FrameworkElement { Tag: ServerRow row }) return;
+        var instance = row.SelectedInstance ?? row.Owner;
         _state.SelectedInstance = instance;
         await _state.LaunchAsync(instance, row.Entry.Address, row.Entry.Port);
     }
 
-    private void Save(GameInstance instance)
+    private void Save(GameInstance instance, IReadOnlyList<ServerEntry> entries)
     {
         try
         {
-            ServerListService.Write(instance, _entries);
-            LoadServers(instance);
-            _state.Notify("服务器列表已保存", false);
+            ServerListService.Write(instance, entries);
+            LoadServers();
+            _state.Notify($"服务器列表已保存到「{instance.Name}」", false);
         }
         catch (Exception ex)
         {

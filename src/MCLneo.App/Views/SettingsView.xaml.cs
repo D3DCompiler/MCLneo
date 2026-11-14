@@ -92,7 +92,6 @@ public partial class SettingsView : UserControl
             ThemeBox.Items.Add(theme);
         }
 
-        ThemeBox.DisplayMemberPath = nameof(ThemeService.Theme.Name);
         var accentKey = settings.AccentTheme?.ToLowerInvariant() switch
         {
             "mint" or "moss" or "cyan" or "cobalt" => "blue",

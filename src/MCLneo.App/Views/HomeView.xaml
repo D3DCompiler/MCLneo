@@ -14,7 +14,7 @@
                 </StackPanel>
                 <StackPanel HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,4,0,0">
                     <TextBlock Text="{Binding TodayText}" Style="{StaticResource Muted}" HorizontalAlignment="Right"/>
-                    <TextBlock Text="MCLneo 0.1.9" Style="{StaticResource Caption}" HorizontalAlignment="Right"
+                    <TextBlock Text="MCLneo 0.1.20" Style="{StaticResource Caption}" HorizontalAlignment="Right"
                                Margin="0,5,0,0"/>
                 </StackPanel>
             </Grid>

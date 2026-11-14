@@ -80,6 +80,60 @@ public sealed class LoaderInstallerService
         }
     }
 
+    public Task<IReadOnlyList<LoaderVersionInfo>> GetFabricVersionsAsync(
+        string minecraftVersion,
+        CancellationToken ct = default) =>
+        GetFabricLikeVersionsAsync(
+            $"https://meta.fabricmc.net/v2/versions/loader/{Uri.EscapeDataString(minecraftVersion)}", ct);
+
+    public Task<IReadOnlyList<LoaderVersionInfo>> GetQuiltVersionsAsync(
+        string minecraftVersion,
+        CancellationToken ct = default) =>
+        GetFabricLikeVersionsAsync(
+            $"https://meta.quiltmc.org/v3/versions/loader/{Uri.EscapeDataString(minecraftVersion)}", ct);
+
+    private async Task<IReadOnlyList<LoaderVersionInfo>> GetFabricLikeVersionsAsync(
+        string url,
+        CancellationToken ct)
+    {
+        try
+        {
+            var text = await _http.GetStringAsync(url, ct).ConfigureAwait(false);
+            using var document = JsonDocument.Parse(text);
+            if (document.RootElement.ValueKind != JsonValueKind.Array)
+            {
+                return Array.Empty<LoaderVersionInfo>();
+            }
+
+            var result = new List<LoaderVersionInfo>();
+            foreach (var item in document.RootElement.EnumerateArray())
+            {
+                if (!item.TryGetProperty("loader", out var loader) ||
+                    !loader.TryGetProperty("version", out var versionNode))
+                {
+                    continue;
+                }
+
+                var version = versionNode.GetString();
+                if (string.IsNullOrWhiteSpace(version)) continue;
+                var stable = loader.TryGetProperty("stable", out var stableNode) &&
+                             stableNode.ValueKind == JsonValueKind.True;
+                result.Add(new LoaderVersionInfo(version, stable));
+                if (result.Count >= 12) break;
+            }
+
+            return result
+                .OrderByDescending(v => v.Recommended)
+                .ThenByDescending(v => v.Version, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            _log.Warn("获取加载器版本失败", ex);
+            return Array.Empty<LoaderVersionInfo>();
+        }
+    }
+
     public async Task<IReadOnlyList<LoaderVersionInfo>> GetNeoForgeVersionsAsync(
         string minecraftVersion,
         CancellationToken ct = default)
