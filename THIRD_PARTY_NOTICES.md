@@ -1,6 +1,6 @@
 # 第三方组件与数据来源
 
-MCLneo 自身不包含 Minecraft 游戏文件、Mojang 资源或 PCL2 的代码/图片。
+MCLneo 自身不包含 Minecraft 游戏文件或 Mojang 资源。
 
 ## Minecraft / Mojang
 
@@ -47,9 +47,3 @@ MCLneo 自身不包含 Minecraft 游戏文件、Mojang 资源或 PCL2 的代码/
 
 - API：<https://api.adoptium.net/>
 - 当本机缺少所需 Java 版本时，MCLneo 可以从 Adoptium 下载 JRE。
-
-## PCL2
-
-- Plain Craft Launcher 2（PCL2）由龙腾猫跃开发，是独立项目。
-- MCLneo 是独立实现，不包含 PCL2 的源代码、素材或二进制文件，也不代表 PCL2 官方。
-- MCLneo 的联机邀请码与 PCL2 的邀请码不互通。
